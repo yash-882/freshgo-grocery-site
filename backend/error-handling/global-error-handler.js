@@ -1,3 +1,5 @@
+import prodErrorHandlers from "./production-error-response.js";
+
 // OPERATIONAL_ERRORS helps identifying operational errors, 
 // also including libraries errors(Mongoose, JWT, etc.)
 // which don't have isOperational property, even though they are considered operational errors
@@ -52,7 +54,23 @@ const GlobalErrorHandler = (err, req, res, next) => {
     // if environment is set to development
     if (process.env.NODE_ENV === 'development')
         return devResponse(err, res)
-    
+
+    // if environment is set to production
+    else if (process.env.NODE_ENV === 'production') {
+        const statusCode = err.statusCode || OPERATIONAL_ERRORS.get(err.name || err.code) || 500;
+
+        // get error message handler based on error type
+        const messageHandler = prodErrorHandlers[err.name || err.code]
+
+        // call messageHandler to get the error message
+        const message = messageHandler ? messageHandler(err) : 'Something went wrong! please try again later';    
+
+        // return error response in production mode
+        res.status(statusCode).json({
+            status: 'fail',
+            message
+        })  
+    }
 }
 
 export default GlobalErrorHandler
