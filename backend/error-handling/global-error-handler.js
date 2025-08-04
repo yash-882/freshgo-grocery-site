@@ -1,3 +1,4 @@
+import e from "express";
 import prodErrorHandlers from "./production-error-response.js";
 
 // OPERATIONAL_ERRORS helps identifying operational errors, 
@@ -18,32 +19,25 @@ const OPERATIONAL_ERRORS= new Map([
     ['ForbiddenError', 403] // Forbidden access error
 ])
 
-// development errors, returns a detailed error response
-const devResponse = (error, res) => {
-    // error properties used in development mode
-
-    const errorName = error.name || 'ServerError';
-    const errorMessage = error.message || 'Something went wrong! please try again later';
-    let statusCode = error.statusCode || OPERATIONAL_ERRORS.get(errorName) || 500;
-
-    // find if the error is operational or not
-    let isOperational = !!OPERATIONAL_ERRORS.get(errorName);
-
-    // check for mongoDB duplication error
-    if(error.code === 11000 && error.name === 'MongoServerError'){
-        statusCode = 409; //duplication http code
-        isOperational = true
-    }
-    
-    // return error response in development mode
-    return res.status(statusCode).json({
+// returns error properties (errorName, errorMessage, etc) sent as a response
+const getErrorProps = (err) => {
+    const errProps = {
         status: 'fail',
-        errorName,
-        errorMessage,
-        stack: error.stack, // native JS stack trace or manually added by CustomError class
-        isOperational, // indicates if the error is operation or not
-        error
-    })
+        errorName: err.name || 'UnknownError',
+        errorMessage: err.message || 'Something went wrong! please try again later',
+        statusCode: err.statusCode || OPERATIONAL_ERRORS.get(err.name) || 500,
+        isOperational: !!OPERATIONAL_ERRORS.get(err.name), //client causes this error (not a server bug)
+        stack: err.stack, //stack trace
+        error: err
+    }
+
+       // check for mongoDB duplication err
+    if(err.code === 11000 && err.name === 'MongoServerError'){
+        errProps.statusCode = 409; //duplication http code
+        errProps.isOperational = true //client caused this error (not a server bug)
+    }
+
+    return errProps
 }
 
 //express passes the flow directly to this middleware
@@ -51,21 +45,26 @@ const devResponse = (error, res) => {
 const GlobalErrorHandler = (err, req, res, next) => {
     console.log('Error:', err);
 
+    // get error properties (errorName, errorMessage, etc)
+    const errProps = getErrorProps(err)
+
     // if environment is set to development
     if (process.env.NODE_ENV === 'development')
-        return devResponse(err, res)
+     // return detailed error response in development mode
+    return res.status(errProps.statusCode).json(errProps)
 
     // if environment is set to production
     else if (process.env.NODE_ENV === 'production') {
-        const statusCode = err.statusCode || OPERATIONAL_ERRORS.get(err.name || err.code) || 500;
+        const statusCode = errProps.statusCode;
 
-        // get error message handler based on error type
-        const messageHandler = prodErrorHandlers[err.name || err.code]
+        // get err message handler based on err type
+        const messageHandler = prodErrorHandlers[err.name] || prodErrorHandlers[err.code]
+        
 
-        // call messageHandler to get the error message
+        // call messageHandler to get the err message
         const message = messageHandler ? messageHandler(err) : 'Something went wrong! please try again later';    
 
-        // return error response in production mode
+        // return err response in production mode
         res.status(statusCode).json({
             status: 'fail',
             message
