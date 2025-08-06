@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import UserModel from "../models/user-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
 import { signAccessToken, signRefreshToken } from "../utils/jwt-user-auth.js";
+import { findUserByQuery } from "../utils/auth-helpers.js";
 
 // sign-up controller
 export const signUp = controllerWrapper(async (req, res, next) => {
@@ -78,13 +79,8 @@ export const login = controllerWrapper(async (req, res, next) => {
         return next(
     new CustomError('BadRequestError', 'Please enter all required fields!', 400));
 
-    const user  = await UserModel.findOne({email});
-
-// if user is not already registered/signed-up
-    if(!user) {
-        return next(
- new CustomError('NotFoundError', 'Email is incorrect or not registered with us', 404));
-    }
+   // check if user exists in DB with the given email
+    const user = await findUserByQuery({email}, true, 'Email is not registered with us!');
 
     const isPasswordCorrect =  await bcrypt.compare(password, user.password)
 
