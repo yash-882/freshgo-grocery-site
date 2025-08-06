@@ -2,7 +2,7 @@ import controllerWrapper from "../utils/controller-wrapper.js";
 import bcrypt from 'bcrypt';
 import UserModel from "../models/user-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
-import { signAccessToken, signRefreshToken } from "../utils/jwt-user-auth.js";
+import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../utils/jwt-user-auth.js";
 import { findUserByQuery } from "../utils/auth-helpers.js";
 
 // sign-up controller
@@ -130,5 +130,62 @@ export const login = controllerWrapper(async (req, res, next) => {
             user
         }
     });
+
+})
+
+
+// middleware to authorize user
+export const authorizeUser = controllerWrapper(async (req, res, next) => {
+    // get access and refresh tokens from cookies
+    const {AT: accessToken, RT: refreshToken} = req.cookies;
+    let user;
+
+    // if access token is not present, throw an error
+    if(!accessToken && !refreshToken)
+        return next(
+    new CustomError('UnauthorizedError', 'You are not logged in!', 401));
+
+    // verify access token, doesn't throw error on expiration and successful validation
+    const result = accessToken ? verifyAccessToken(accessToken) : {notProvided: true}
+
+    // access token expired
+    if(result.expired || result.notProvided){ 
+
+        // check for refresh token
+        if(!refreshToken)
+            return next(
+    new CustomError('UnauthorizedError', 'You are not logged in!', 401));
+
+
+    // verify refresh token, throws error if the token is invalid/expired
+    const decoded = verifyRefreshToken(refreshToken);
+
+    //throws error if user is not found
+    user = await findUserByQuery({_id: decoded.id}, true, 'Account may have been deleted!');
+
+    // sign new access token
+    const newToken = signAccessToken({id: user._id, role: user.role})
+    
+    // parseInt stops parsing when 'd'(stands for days) is triggered,
+    // and returns numbers of days in Number datatype
+    // AT = Access Token
+    const AT_AGE = parseInt(process.env.ACCESS_TOKEN_EXPIRES_IN) //in minutes
+
+    // store access token in the browser cookies
+    res.cookie('AT', newToken, {
+        httpOnly: true,
+        sameSite: 'strict',
+        expires: new Date(Date.now() + AT_AGE * 60 * 1000), // minutes 
+    });
+}
+
+else{
+    //throws error if user is not found
+    user = await findUserByQuery({_id: result.decoded.id}, true, 'Account may have been deleted!');
+}
+
+
+req.user = user; // attach user to the request object
+next() //continue to the next middleware/controller
 
 })
