@@ -134,19 +134,29 @@ export const login = controllerWrapper(async (req, res, next) => {
 })
 
 
-// middleware to authorize user
+// middleware to authorize user and allow access to protected routes
+//additionally, it avoids login/signup requests if user is already logged in
 export const authorizeUser = controllerWrapper(async (req, res, next) => {
+
     // get access and refresh tokens from cookies
     const {AT: accessToken, RT: refreshToken} = req.cookies;
     let user;
+    const noTokens = !accessToken && !refreshToken;
+    
+    // check for auth request
+    const reqForAuth = req.path === '/login' || req.path === '/sign-up'
 
-    // if access token is not present, throw an error
-    if(!accessToken && !refreshToken)
-        return next(
-    new CustomError('UnauthorizedError', 'You are not logged in!', 401));
+    // if req is for auth and no tokens are provided, allow the request to continue
+    if(noTokens && reqForAuth)
+        return next(); 
 
-    // verify access token, doesn't throw error on expiration and successful validation
-    const result = accessToken ? verifyAccessToken(accessToken) : {notProvided: true}
+
+    // verify access token, doesn't throw error on expiration
+    const result = accessToken 
+    ? 
+    verifyAccessToken(accessToken) 
+    : 
+    {notProvided: true}
 
     // access token expired
     if(result.expired || result.notProvided){ 
@@ -181,9 +191,17 @@ export const authorizeUser = controllerWrapper(async (req, res, next) => {
 
 else{
     //throws error if user is not found
-    user = await findUserByQuery({_id: result.decoded.id}, true, 'Account may have been deleted!');
+    user = await findUserByQuery({_id: result.decoded?.id}, true, 'Account may have been deleted!');
 }
 
+// at this point, user is found and access token is valid
+// if req is for auth, don't allow login/signup and avoid token regeneration
+if(reqForAuth) {
+   return res.status(403).json({
+        status: 'success',
+        message: 'You are already logged in!'
+    })
+}
 
 req.user = user; // attach user to the request object
 next() //continue to the next middleware/controller
