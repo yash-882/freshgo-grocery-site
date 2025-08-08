@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import UserModel from "../models/user-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../utils/jwt-user-auth.js";
-import { findUserByQuery } from "../utils/auth-helpers.js";
+import { findUserByQuery, publicRoutes } from "../utils/auth-helpers.js";
 
 // sign-up controller
 export const signUp = controllerWrapper(async (req, res, next) => {
@@ -134,19 +134,26 @@ export const login = controllerWrapper(async (req, res, next) => {
 })
 
 
-// middleware to authorize user
+// middleware to authorize user and allow access to protected routes
+//additionally, it avoids login/signup requests if user is already logged in
 export const authorizeUser = controllerWrapper(async (req, res, next) => {
+    
     // get access and refresh tokens from cookies
     const {AT: accessToken, RT: refreshToken} = req.cookies;
     let user;
 
     // if access token is not present, throw an error
-    if(!accessToken && !refreshToken)
+    if(!accessToken && !refreshToken && !reqForAuth)
         return next(
     new CustomError('UnauthorizedError', 'You are not logged in!', 401));
 
+
     // verify access token, doesn't throw error on expiration and successful validation
-    const result = accessToken ? verifyAccessToken(accessToken) : {notProvided: true}
+    const result = accessToken 
+    ? 
+    verifyAccessToken(accessToken) 
+    : 
+    {notProvided: true}
 
     // access token expired
     if(result.expired || result.notProvided){ 
@@ -184,6 +191,16 @@ else{
     user = await findUserByQuery({_id: result.decoded.id}, true, 'Account may have been deleted!');
 }
 
+// check for auth request
+const reqForAuth = req.path === '/login' || req.path === '/sign-up'
+
+// if already logged in, don't allow login/signup and avoid token regeneration
+if(reqForAuth) {
+   return res.status(403).json({
+        status: 'success',
+        message: 'You are already logged in!'
+    })
+}
 
 req.user = user; // attach user to the request object
 next() //continue to the next middleware/controller
