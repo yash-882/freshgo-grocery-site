@@ -207,3 +207,17 @@ req.user = user; // attach user to the request object
 next() //continue to the next middleware/controller
 
 })
+
+export const logout = controllerWrapper(async (req, res, next) => {
+
+    // clear all tokens
+    res.clearCookie('AT', { httpOnly: true, sameSite: 'strict'})
+    res.clearCookie('RT', { httpOnly: true, sameSite: 'strict'})
+
+    // user logged out successfully
+    res.status(201).json({
+        status: 'success',
+        message: 'Logged out successfully'
+    })
+
+})
