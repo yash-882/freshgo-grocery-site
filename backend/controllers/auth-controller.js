@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import UserModel from "../models/user-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../utils/jwt-user-auth.js";
-import { findUserByQuery } from "../utils/auth-helpers.js";
+import { bcryptCompare, findUserByQuery } from "../utils/auth-helpers.js";
 
 // sign-up controller
 export const signUp = controllerWrapper(async (req, res, next) => {
@@ -82,12 +82,11 @@ export const login = controllerWrapper(async (req, res, next) => {
    // check if user exists in DB with the given email
     const user = await findUserByQuery({email}, true, 'Email is not registered with us!');
 
-    const isPasswordCorrect =  await bcrypt.compare(password, user.password)
-
-    if(!isPasswordCorrect){
-        return next(
-    new CustomError('UnauthorizedError', 'Incorrect password!', 401));
-    }
+    // validate password, throws custom error if incorrect
+    await bcryptCompare({
+        plain: password, 
+        hashed: user.password
+    }, 'Incorrect password!');
 
     // password was correct, sign tokens
     // tokens properties AT = Access Token, RT = Refresh Token
@@ -220,4 +219,53 @@ export const logout = controllerWrapper(async (req, res, next) => {
         message: 'Logged out successfully'
     })
 
+})
+
+export const changePassword = controllerWrapper(async (req, res, next) => {
+    const {currentPassword, newPassword, confirmNewPassword} = req.body || {};
+
+    // if any required field is missing, throw an error
+    if(!currentPassword || !newPassword || !confirmNewPassword)
+        return next(
+    new CustomError('BadRequestError', 'Please enter all required fields!', 400));
+
+    const user = req.user; // get user from request object
+
+    // if new password is not confirmed correctly
+    if(newPassword !== confirmNewPassword) {
+        return next(
+    new CustomError('BadRequestError', 'Please confirm your new password correctly', 400));
+    }
+
+    
+    // validate current password, throws custom error if incorrect
+    await bcryptCompare({
+        plain: currentPassword, 
+        hashed: user.password
+    }, 'Incorrect current password!');
+
+    // if new password is same as the current password
+    const isNewPasswordSame = await bcrypt.compare(newPassword, user.password);
+    
+    if(isNewPasswordSame) {
+        return next(
+    new CustomError('BadRequestError', 'Password must be different from the previous one', 400));
+    }
+    
+    // assigning new password
+    user.password = newPassword;
+
+    // save user document, pre-save hook will hash the password and save the updated user
+    await user.save();
+
+    user.password = undefined; // remove password from the response
+
+    // change password successfully
+    res.status(200).json({
+        status: 'success',
+        message: 'Password changed successfully',
+        data: {
+            user
+        }
+    });
 })
