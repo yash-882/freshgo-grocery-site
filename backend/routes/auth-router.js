@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import { authorizeUser, login, signUp } from '../controllers/auth-controller.js';
-
+import { login, signUp, authorizeUser, logout } from '../controllers/auth-controller.js';
 
 const authRouter = Router();
 
@@ -15,5 +14,11 @@ authRouter.route('/sign-up')
 // login route
 authRouter.route('/login')
 .post(login)
+
+// PROTECTED ROUTES:
+
+// logout route 
+authRouter.route('/logout')
+.post(logout)
 
 export default authRouter
