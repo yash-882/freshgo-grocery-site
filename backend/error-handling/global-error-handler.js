@@ -16,7 +16,8 @@ const OPERATIONAL_ERRORS= new Map([
     ['BadRequestError', 400], // Bad request error
     ['UnauthorizedError', 401], // Unauthorized access error
     ['NotFoundError', 404],  // Resource not found error
-    ['ForbiddenError', 403] // Forbidden access error
+    ['ForbiddenError', 403], // Forbidden access error
+    ['ConflictError', 409], //Duplicate data error
 ])
 
 // returns error properties (errorName, errorMessage, etc) sent as a response

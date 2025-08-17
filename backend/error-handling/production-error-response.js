@@ -43,7 +43,10 @@ const prodErrorHandlers = {
     NotFoundError: err => err.message || 'Content not found',
 
     // Not allowed error
-    ForbiddenError: err => err.message || 'You do not have permission to access this resource'
+    ForbiddenError: err => err.message || 'You do not have permission to access this resource',
+
+    // conflict error (duplication)
+    ConflictError: err => err.message || 'This field is already taken'
 }
 
 export default prodErrorHandlers;

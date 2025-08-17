@@ -3,40 +3,46 @@ import bcrypt from 'bcrypt';
 import UserModel from "../models/user-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../utils/jwt-user-auth.js";
-import { bcryptCompare, findUserByQuery } from "../utils/auth-helpers.js";
+import { findUserByQuery, bcryptCompare, generateOTP, verifyOTP } from "../utils/auth-helpers.js";
+import client from "../configs/redis-client.js";
+import sendEmail from "../utils/mailer.js";
 
-// sign-up controller
+// signup user after OTP validation
 export const signUp = controllerWrapper(async (req, res, next) => {
-    const body = req.body;
-
-    // if form body is missing, throw an error
-    if(!body || Object.keys(body).length === 0)
-        return next(
-    new CustomError('BadRequestError', 'Please enter all required fields!', 400));
-
-    // if password is not confirmed correctly
-    if(password !== confirmPassword)
-        return next(
-    new CustomError('BadRequestError', 'Please confirm your password correctly', 400));
+    const {email, OTP: enteredOTP} = req.body || {}
     
+    if(!email || !enteredOTP)
+        return next(
+    new CustomError('BadRequestError', 'Email or OTP is missing!', 400))
 
-    // create a new user
-    const createdUser = await UserModel.create({
-        name: body.name,
-        email: body.email,
-        password: body.password,
-        role: body.role
-    });
+    // req.path specifies the action(already saved in Redis) made for OTP generation (eg. /change-password, /change-email)
+    const action = req.path.slice(1, req.path.length) //(/current-action -> current-action)
 
+    //key saved in Redis (used to retrieve the stored user and OTP)
+    const OTP_KEY = `${action}:${email}`
+
+    // verifies OTP and returns verified user, throws error for expiration and wrong attempts
+    const verifiedUser = await verifyOTP(OTP_KEY, enteredOTP)
+    
+    
+    // OTP was correct, create user
+    const newUser = new UserModel(verifiedUser);
+    
+    //save user document, pre-save hook will hash the password
+    await newUser.save() 
+    
+    // clear temporary user from redis
+    client.del(verifiedUser.email)
+    
 // tokens properties AT = Access Token, RT = Refresh Token
     const tokens = {
         AT: signAccessToken({
-            id: createdUser._id, 
-            role: createdUser.role
+            id: newUser._id, 
+            role: newUser.role
         }),
         RT: signRefreshToken({
-            id: createdUser._id, 
-            role: createdUser.role
+            id: newUser._id, 
+            role: newUser.role
         }),
 
     // parseInt stops parsing when 'd'(stands for days) is triggered,
@@ -59,15 +65,75 @@ export const signUp = controllerWrapper(async (req, res, next) => {
     });
 
     // delete password before responding
-    createdUser.password = undefined
+    newUser.password = undefined
 
     // send response
     res.status(201).json({
         status: 'success',
+        message: 'Account created successfully',
         data: {
-            user: createdUser
+            user: newUser,
         }
     });
+
+    // send welcome email after sign-up
+    await sendEmail(newUser.email, 'Welcome to FreshGo', 
+        "Welcome to FreshGo! Your account has been created successfully. Start exploring fresh groceries today. – The FreshGo Team"
+    )
+})
+
+// sign-up controller
+export const validateForSignUp = controllerWrapper(async (req, res, next) => {
+    const body = req.body || {};
+
+    // if form body is missing, throw an error
+    if(!body.name || !body.email || !body.password || !body.confirmPassword)
+        return next(
+    new CustomError('BadRequestError', 'Please enter all required fields!', 400));
+
+    // if password is not confirmed correctly
+    if(body.password !== body.confirmPassword)
+        return next(
+    new CustomError('BadRequestError', 'Please confirm your password correctly', 400));
+
+    const user = await findUserByQuery({email: body.email}, false)
+
+    // if the email is already registered with another account
+    if(user){
+        return next(
+    new CustomError('ConflictError', 'Email is already taken!', 409));
+    }
+
+    // create a new mongoose document (not saved)
+    const newUser = new UserModel(body)
+
+    // validate user fields, throws error if any field is invalid
+    await newUser.validate()
+
+    const OTP = generateOTP(6)
+    const hashedOTP = await bcrypt.hash(OTP, 10)
+
+// temporarily (300 -> 5 minutes) store the user in Redis for OTP verification 
+// always prefix (only for OTP verification request) the Redis key 
+// with the API route path (without "/") of the next route handler where the OTP will be verified
+//this helps Redis to differentiate OTP requests for the same email across routes (e.g., /sign-up, /change-password)
+// example: /sign-up → sign-up:<email>, /change-password → change-password:<email>
+    await client.setEx(`sign-up:${body.email}`, 300, JSON.stringify({
+        name: body.name,
+        email: body.email,
+        password: body.password,
+        OTP: hashedOTP
+    }))
+
+    // sending user an OTP via email
+    await sendEmail(body.email, 'Verification for sign up', `Verification code: ${OTP}`)
+
+    // OTP successfully sent
+    res.status(201).json({
+        status: 'success',
+        message: 'OTP sent to your email',
+        email: body.email //attach email so the frontend can reuse it in the sign-up flow
+})
 })
 
 // login controller
@@ -142,8 +208,8 @@ export const authorizeUser = controllerWrapper(async (req, res, next) => {
     let user;
     const noTokens = !accessToken && !refreshToken;
     
-    // check for auth request
-    const reqForAuth = req.path === '/login' || req.path === '/sign-up'
+    // checks for auth request (eg. /login, sign-up and sign-up-validation)
+    const reqForAuth = /^\/(login|sign-up|sign-up-validation)$/.test(req.path)
 
     // if req is for auth and no tokens are provided, allow the request to continue
     if(noTokens && reqForAuth)
