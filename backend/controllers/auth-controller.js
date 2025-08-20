@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import UserModel from "../models/user-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../utils/jwt-user-auth.js";
-import { findUserByQuery, bcryptCompare, generateOTP, verifyOTP } from "../utils/auth-helpers.js";
+import { findUserByQuery, bcryptCompare, generateOTP, verifyOTP, trackOTPLimit } from "../utils/auth-helpers.js";
 import client from "../configs/redis-client.js";
 import sendEmail from "../utils/mailer.js";
 
@@ -21,6 +21,18 @@ export const signUp = controllerWrapper(async (req, res, next) => {
     //key saved in Redis (used to retrieve the stored user and OTP)
     const OTP_KEY = `${action}:${email}`
 
+    //returns the updated OTP data (or initializes it for the first request))
+    //throws custom error if the request limit is exceeded
+    const OTPData = await trackOTPLimit({
+        OTP_KEY,
+        countType: 'attemptCount',
+        limit: 5,
+        errMessage: 'OTP attempts limit reached, try again later'
+    })
+    
+    // update OTPData (updated attempts)
+    await client.setEx(OTP_KEY, OTPData.ttl, JSON.stringify(OTPData.user))
+    
     // verifies OTP and returns verified user, throws error for expiration and wrong attempts
     const verifiedUser = await verifyOTP(OTP_KEY, enteredOTP)
     
@@ -104,6 +116,17 @@ export const validateForSignUp = controllerWrapper(async (req, res, next) => {
     new CustomError('ConflictError', 'Email is already taken!', 409));
     }
 
+    const OTP_KEY = `sign-up:${body.email}`;
+
+    //returns the updated OTP data (or initializes it for the first request))
+    //throws custom error if the request limit is exceeded
+    const OTPData = await trackOTPLimit({
+        OTP_KEY, //key stored in Redis
+        countType: 'reqCount', //limit for requests
+        limit: 7, //only 7 requests can be made for OTP request
+        errMessage: 'OTP requests limit reached, try again later' //err message (if occurs)
+    })
+
     // create a new mongoose document (not saved)
     const newUser = new UserModel(body)
 
@@ -113,20 +136,23 @@ export const validateForSignUp = controllerWrapper(async (req, res, next) => {
     const OTP = generateOTP(6)
     const hashedOTP = await bcrypt.hash(OTP, 10)
 
+    
+    // sending user an OTP via email
+    await sendEmail(body.email, 'Verification for sign up', `Verification code: ${OTP}`)
+
+
 // temporarily (300 -> 5 minutes) store the user in Redis for OTP verification 
 // always prefix (only for OTP verification request) the Redis key 
 // with the API route path (without "/") of the next route handler where the OTP will be verified
 //this helps Redis to differentiate OTP requests for the same email across routes (e.g., /sign-up, /change-password)
 // example: /sign-up → sign-up:<email>, /change-password → change-password:<email>
-    await client.setEx(`sign-up:${body.email}`, 300, JSON.stringify({
+    await client.setEx(`sign-up:${body.email}`, OTPData.ttl, JSON.stringify({
         name: body.name,
         email: body.email,
         password: body.password,
-        OTP: hashedOTP
+        OTP: hashedOTP,
+        reqCount: OTPData.user.reqCount // request count
     }))
-
-    // sending user an OTP via email
-    await sendEmail(body.email, 'Verification for sign up', `Verification code: ${OTP}`)
 
     // OTP successfully sent
     res.status(201).json({
@@ -197,7 +223,6 @@ export const login = controllerWrapper(async (req, res, next) => {
     });
 
 })
-
 
 // middleware to authorize user and allow access to protected routes
 //additionally, it avoids login/signup requests if user is already logged in

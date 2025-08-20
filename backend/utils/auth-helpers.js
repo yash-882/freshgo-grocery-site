@@ -70,3 +70,40 @@ export const verifyOTP = async (OTP_KEY, enteredOTP) => {
     return parsedUser;
 }
 
+// validates OTP requests, attempts and update update the
+export const trackOTPLimit = async ({ OTP_KEY, countType='reqCount', limit=5, errMessage }) => {
+    
+    const jsonData = await client.get(OTP_KEY)
+    
+    // remaining expiration of the OTP
+    const ttl = await client.ttl(OTP_KEY)
+    
+    // determines whether error should be thrown or not
+    const isAttemptCheck = countType === 'attemptCount'
+
+    //if the user associated with the OTP is not found
+    if (!jsonData) {
+        //OTP action has not initiated yet, return 0 (count)
+        if(!isAttemptCheck) 
+            return {user: {reqCount: 1}, ttl: 300} // first request
+
+        // throw error
+       throw new CustomError('NotFoundError', 'Expired OTP, please request a new one', 429)
+    }
+
+     
+    //user found, parsing JSON data to JS obj..
+    const OTPData = JSON.parse(jsonData)
+    const currentCount = OTPData[countType] || 0
+  
+    // if reached maximum (5) OTP request limit
+    if (OTPData[countType] >= limit) {
+        throw new CustomError('TooManyRequestsError', errMessage, 429)
+    } 
+    else {
+        OTPData[countType] = currentCount + 1 //update count 
+    }
+
+    //return OTPData and ttl(remaining expiration time)
+    return {user: OTPData, ttl}
+}
