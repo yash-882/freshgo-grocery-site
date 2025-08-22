@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import UserModel from "../models/user-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../utils/jwt-user-auth.js";
-import { findUserByQuery, bcryptCompare, generateOTP, verifyOTP, trackOTPLimit } from "../utils/auth-helpers.js";
+import { findUserByQuery, bcryptCompare, generateOTP, verifyOTP, trackOTPLimit, getKeyForOTPData } from "../utils/auth-helpers.js";
 import client from "../configs/redis-client.js";
 import sendEmail from "../utils/mailer.js";
 
@@ -15,11 +15,9 @@ export const signUp = controllerWrapper(async (req, res, next) => {
         return next(
     new CustomError('BadRequestError', 'Email or OTP is missing!', 400))
 
-    // req.path specifies the action(already saved in Redis) made for OTP generation (eg. /change-password, /change-email)
-    const action = req.path.slice(1, req.path.length) //(/current-action -> current-action)
 
-    //key saved in Redis (used to retrieve the stored user and OTP)
-    const OTP_KEY = `${action}:${email}`
+    // key stored in Redis (read this function to see the purpose)
+    const OTP_KEY = getKeyForOTPData(email, '/sign-up')
 
     //returns the updated OTP data (or initializes it for the first request))
     //throws custom error if the request limit is exceeded
@@ -116,7 +114,8 @@ export const validateForSignUp = controllerWrapper(async (req, res, next) => {
     new CustomError('ConflictError', 'Email is already taken!', 409));
     }
 
-    const OTP_KEY = `sign-up:${body.email}`;
+    // key to be stored in Redis (read this function to see the purpose)
+    const OTP_KEY = getKeyForOTPData(body.email, '/sign-up')
 
     //returns the updated OTP data (or initializes it for the first request))
     //throws custom error if the request limit is exceeded
@@ -141,12 +140,8 @@ export const validateForSignUp = controllerWrapper(async (req, res, next) => {
     await sendEmail(body.email, 'Verification for sign up', `Verification code: ${OTP}`)
 
 
-// temporarily (300 -> 5 minutes) store the user in Redis for OTP verification 
-// always prefix (only for OTP verification request) the Redis key 
-// with the API route path (without "/") of the next route handler where the OTP will be verified
-//this helps Redis to differentiate OTP requests for the same email across routes (e.g., /sign-up, /change-password)
-// example: /sign-up → sign-up:<email>, /change-password → change-password:<email>
-    await client.setEx(`sign-up:${body.email}`, OTPData.ttl, JSON.stringify({
+// temporarily (ttl example: 300 -> 5 minutes) store the user in Redis for OTP data for verification 
+    await client.setEx(OTP_KEY, OTPData.ttl, JSON.stringify({
         name: body.name,
         email: body.email,
         password: body.password,

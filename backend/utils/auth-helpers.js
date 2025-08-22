@@ -107,3 +107,17 @@ export const trackOTPLimit = async ({ OTP_KEY, countType='reqCount', limit=5, er
     //return OTPData and ttl(remaining expiration time)
     return {user: OTPData, ttl}
 }
+
+
+// always prefix (only for OTP verification request) the Redis key 
+// with the API route path (without "/") of the next route handler where the OTP will be verified
+// this helps Redis to differentiate OTP requests for the same email across routes (e.g., /sign-up, /change-password)
+// example: /sign-up → sign-up:<email>, /change-password → change-password:<email>
+
+export const getKeyForOTPData = (email, verificationRoute) => {
+    const key = `${verificationRoute}:${email}`
+
+    // remove leading '/' if present
+    return key.startsWith('/') ? key.slice(1, key.length) : key
+}
+   
