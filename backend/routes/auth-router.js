@@ -5,9 +5,26 @@ import {
     login, 
     authorizeUser, 
     logout, 
-    changePassword, 
+    changePassword,
     validateForSignUp, 
-    signUp, } from '../controllers/auth-controller.js';
+    signUp,
+    resetPassword,
+    verifyPasswordResetOTP,
+    submitNewPassword, } from '../controllers/auth-controller.js';
+
+
+//request OTP to reset password 
+authRouter.route('/reset-password')
+.post(resetPassword)
+
+// verifies OTP
+authRouter.route('/reset-password/verify')
+.post(verifyPasswordResetOTP)
+
+// reset password using a valid password reset token
+authRouter.route('/reset-password/submit')
+.patch(submitNewPassword)
+
 
 // middleware to authorize user and allow access to protected routes
 // additionally, it avoids login/signup requests if user is already logged in

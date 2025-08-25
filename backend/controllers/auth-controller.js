@@ -355,3 +355,161 @@ export const changePassword = controllerWrapper(async (req, res, next) => {
         }
     });
 })
+
+// request OTP to change the password
+export const resetPassword = async (req, res, next) => {
+
+    // get email from body
+    const {email} = req.body || {}
+
+    // if email is not provided
+    if(!email)
+        return next(
+    new CustomError('BadRequestError', 'Email is required!', 400));
+
+    // finds user in DB, throws error if not found 
+    await findUserByQuery({email}, true, 'Email is not registered with us!')
+
+    const OTP = generateOTP(6)
+    const hashedOTP = await bcrypt.hash(OTP, 10)
+
+
+    // key stored in Redis (read this function to see the purpose)
+    const OTP_KEY = getKeyForOTPData(email, '/reset-password/verify')
+
+    //returns the updated OTP data (or initializes it for the first request))
+    //throws custom error if the request limit is exceeded
+    const OTPData = await trackOTPLimit({
+        OTP_KEY, //key stored in Redis
+        countType: 'reqCount', //limit for requests
+        limit: 7, //only 7 requests can be made for OTP request
+        errMessage: 'OTP requests limit reached, try again later' //err message (if occurs)
+    })
+    
+    // sending user an OTP via email
+    await sendEmail(email, 'Reset password', `Use this code to reset password: ${OTP}`)
+    
+    //temporarily (ttl example: 300 -> 5 minutes) store the user in Redis for OTP data for verification 
+    await client.setEx(OTP_KEY, OTPData.ttl, JSON.stringify({
+        email,
+        OTP: hashedOTP,
+        reqCount: OTPData.user.reqCount // request count
+    }))
+
+    // OTP successfully sent
+    res.status(201).json({
+        status: 'success',
+        message: 'OTP sent to your email',
+        email //attach email so the frontend can reuse it in the sign-up flow
+})
+}
+
+// verifies the OTP and change password
+export const verifyPasswordResetOTP = controllerWrapper(async (req, res, next) => {
+
+    const {OTP: enteredOTP, email} = req.body;
+    
+    if(!enteredOTP || !email){
+        return next(
+    new CustomError('BadRequestError', 'Email or OTP is missing!', 400));
+    }
+
+    const OTP_KEY = getKeyForOTPData(email, req.path)
+    
+    //returns the updated OTP data (or initializes it for the first request))
+    //throws custom error if the request limit is exceeded
+    const OTPData = await trackOTPLimit({
+        OTP_KEY, //key stored in Redis
+        countType: 'attemptCount', //limit for requests
+        limit: 5, //only 5 requests can be made for OTP request
+        errMessage: 'OTP attempts limit reached, try again later' //err message (if occurs)
+    })
+    
+    //update attempts...
+    await client.setEx(OTP_KEY, OTPData.ttl, JSON.stringify({
+        ...OTPData.user,
+        attemptCount: OTPData.user.attemptCount // request count
+    }))
+
+    //verifies OTP and returns verified user, throws error for expiration and wrong attempts
+    await verifyOTP(OTP_KEY, enteredOTP)
+
+    // OTP was correct delete the user from Redis
+    await client.del(OTP_KEY)
+    
+    // create token key for Redis
+    const TOKEN_KEY = getKeyForOTPData(email, `change-password-token`)
+
+    // storing another token for /change-password (allows user to change the password)
+    await client.setEx(TOKEN_KEY, 300, JSON.stringify({
+        verified: true,
+        email
+    }))
+
+    // user is now allowed to modify their password
+    res.status(201).json({message: 'OTP was correct', email})
+})
+
+// resets password using a valid password reset token
+export const submitNewPassword = controllerWrapper(async (req, res, next) => {
+
+    const {email, newPassword, confirmNewPassword} = req.body || {}
+
+    // if email is missing
+      if(!email)
+        return next(
+    new CustomError('BadRequestError', 'Email is required!', 400));
+
+    // if the specified fields are missing
+      if(!newPassword || !confirmNewPassword)
+        return next(
+    new CustomError('BadRequestError', 'Enter all password fields!', 400));
+
+    // get key for Redis
+    const TOKEN_KEY = getKeyForOTPData(email, 'change-password-token')
+
+    // find if token is stored in Redis
+    const jsonData = await client.get(TOKEN_KEY);
+
+    const tokenData = JSON.parse(jsonData)
+
+    //if user has no token 
+    if(!tokenData || !tokenData.verified){
+          return next(
+    new CustomError('UnauthorizedError', 'Session has been expired!', 401));
+    }
+
+    // if these fields does not match
+    if(newPassword !== confirmNewPassword){
+        return next(
+    new CustomError('BadRequestError', 'Please confirm your password correctly', 400));
+    }
+
+    //query DB for user, throws error if not found
+    const user = await findUserByQuery({email}, true, 'Account may have been deleted')
+
+
+    // if new password is same as the current password
+    const isNewPasswordSame = await bcrypt.compare(newPassword, user.password);
+    
+    if(isNewPasswordSame) {
+        return next(
+    new CustomError('BadRequestError', 'Password must be different from the previous one', 400));
+    }
+
+    // assign new password
+    user.password = newPassword 
+
+    //save user document, pre-save hook will hash the password
+    await user.save()
+
+    // delete token from Redis
+    await client.del(TOKEN_KEY)
+
+    // password changed 
+    res.status(200).json({
+        status: 'success',
+        message: 'Password changed successfully'
+    })
+
+})
