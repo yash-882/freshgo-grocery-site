@@ -3,9 +3,10 @@ import bcrypt from 'bcrypt';
 import UserModel from "../models/user-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../utils/jwt-user-auth.js";
-import { findUserByQuery, bcryptCompare, generateOTP, verifyOTP, trackOTPLimit, getKeyForOTPData } from "../utils/auth-helpers.js";
+import { findUserByQuery, bcryptCompare, generateOTP, verifyOTP, trackOTPLimit } from "../utils/auth-helpers.js";
 import client from "../configs/redis-client.js";
 import sendEmail from "../utils/mailer.js";
+import RedisService from "../utils/redis-service.js";
 
 // signup user after OTP validation
 export const signUp = controllerWrapper(async (req, res, next) => {
@@ -15,12 +16,16 @@ export const signUp = controllerWrapper(async (req, res, next) => {
         return next(
     new CustomError('BadRequestError', 'Email or OTP is missing!', 400))
 
+    // a unique key is generated with the combination of 'purpose' and 'email' for Redis)
+    const otpStore = new RedisService(email, 'SIGN_UP_OTP')
+    
+    // key stored in Redis 
+    const OTP_KEY = otpStore.getKey();
 
-    // key stored in Redis (read this function to see the purpose)
-    const OTP_KEY = getKeyForOTPData(email, '/sign-up')
 
     //returns the updated OTP data (or initializes it for the first request))
-    //throws custom error if the request limit is exceeded
+    //throws custom error if the request limit is exceeded or data is not found
+
     const OTPData = await trackOTPLimit({
         OTP_KEY,
         countType: 'attemptCount',
@@ -28,8 +33,8 @@ export const signUp = controllerWrapper(async (req, res, next) => {
         errMessage: 'OTP attempts limit reached, try again later'
     })
     
-    // update OTPData (updated attempts)
-    await client.setEx(OTP_KEY, OTPData.ttl, JSON.stringify(OTPData.user))
+    // update OTPData (updated attempts, continuing ttl)
+    await otpStore.setShortLivedData(OTPData.user, OTPData.ttl)
     
     // verifies OTP and returns verified user, throws error for expiration and wrong attempts
     const verifiedUser = await verifyOTP(OTP_KEY, enteredOTP)
@@ -114,8 +119,12 @@ export const validateForSignUp = controllerWrapper(async (req, res, next) => {
     new CustomError('ConflictError', 'Email is already taken!', 409));
     }
 
-    // key to be stored in Redis (read this function to see the purpose)
-    const OTP_KEY = getKeyForOTPData(body.email, '/sign-up')
+   
+    // a unique key is generated with the combination of 'purpose' and 'email' for Redis
+    const otpStore = new RedisService(body.email, 'SIGN_UP_OTP')
+    
+    // OTP key
+    const OTP_KEY = otpStore.getKey();
 
     //returns the updated OTP data (or initializes it for the first request))
     //throws custom error if the request limit is exceeded
@@ -139,15 +148,14 @@ export const validateForSignUp = controllerWrapper(async (req, res, next) => {
     // sending user an OTP via email
     await sendEmail(body.email, 'Verification for sign up', `Verification code: ${OTP}`)
 
-
-// temporarily (ttl example: 300 -> 5 minutes) store the user in Redis for OTP data for verification 
-    await client.setEx(OTP_KEY, OTPData.ttl, JSON.stringify({
+    // temporarily (ttl example: 300 -> 5 minutes) store the user in Redis for OTP data for verification 
+    await otpStore.setShortLivedData({
         name: body.name,
         email: body.email,
         password: body.password,
         OTP: hashedOTP,
         reqCount: OTPData.user.reqCount // request count
-    }))
+    }, 300)
 
     // OTP successfully sent
     res.status(201).json({
@@ -374,8 +382,10 @@ export const resetPassword = async (req, res, next) => {
     const hashedOTP = await bcrypt.hash(OTP, 10)
 
 
-    // key stored in Redis (read this function to see the purpose)
-    const OTP_KEY = getKeyForOTPData(email, '/reset-password/verify')
+    // a unique key is generated with the combination of 'purpose' and 'email' for Redis
+    const otpStore = new RedisService(email, 'RESET_PASSWORD_OTP')
+    // OTP key
+    const OTP_KEY = otpStore.getKey()
 
     //returns the updated OTP data (or initializes it for the first request))
     //throws custom error if the request limit is exceeded
@@ -390,11 +400,11 @@ export const resetPassword = async (req, res, next) => {
     await sendEmail(email, 'Reset password', `Use this code to reset password: ${OTP}`)
     
     //temporarily (ttl example: 300 -> 5 minutes) store the user in Redis for OTP data for verification 
-    await client.setEx(OTP_KEY, OTPData.ttl, JSON.stringify({
+    await otpStore.setShortLivedData({
         email,
         OTP: hashedOTP,
         reqCount: OTPData.user.reqCount // request count
-    }))
+    }, 300)
 
     // OTP successfully sent
     res.status(201).json({
@@ -414,10 +424,13 @@ export const verifyPasswordResetOTP = controllerWrapper(async (req, res, next) =
     new CustomError('BadRequestError', 'Email or OTP is missing!', 400));
     }
 
-    const OTP_KEY = getKeyForOTPData(email, req.path)
+     //to set purpose and email 
+    // (a unique key is generated with the combination of 'purpose' and 'email' for Redis)
+    const otpStore = new RedisService(email, 'RESET_PASSWORD_OTP')
+    const OTP_KEY = otpStore.getKey()
     
     //returns the updated OTP data (or initializes it for the first request))
-    //throws custom error if the request limit is exceeded
+    //throws custom error if the request limit is exceeded or data is not found
     const OTPData = await trackOTPLimit({
         OTP_KEY, //key stored in Redis
         countType: 'attemptCount', //limit for requests
@@ -426,25 +439,27 @@ export const verifyPasswordResetOTP = controllerWrapper(async (req, res, next) =
     })
     
     //update attempts...
-    await client.setEx(OTP_KEY, OTPData.ttl, JSON.stringify({
-        ...OTPData.user,
-        attemptCount: OTPData.user.attemptCount // request count
-    }))
+    await otpStore.setShortLivedData({
+        ...OTPData.user, 
+        attemptCount: OTPData.user.attemptCount //updated attempts
+    }, 300)
+    
 
     //verifies OTP and returns verified user, throws error for expiration and wrong attempts
     await verifyOTP(OTP_KEY, enteredOTP)
 
     // OTP was correct delete the user from Redis
-    await client.del(OTP_KEY)
+    await otpStore.deleteData(OTP_KEY)
     
-    // create token key for Redis
-    const TOKEN_KEY = getKeyForOTPData(email, `change-password-token`)
+    // a unique key is generated with the combination of 'purpose' and 'email' for Redis
+    const tokenStore = new RedisService(email, 'RESET_PASSWORD_TOKEN')
 
-    // storing another token for /change-password (allows user to change the password)
-    await client.setEx(TOKEN_KEY, 300, JSON.stringify({
-        verified: true,
-        email
-    }))
+    // token to store
+    const token = {email, purpose: 'RESET_PASSWORD_TOKEN', verified: true}
+    
+    // storing token for changing the password (allows user to change the password)
+    await tokenStore.setShortLivedData(token, 300)
+    
 
     // user is now allowed to modify their password
     res.status(201).json({message: 'OTP was correct', email})
@@ -465,18 +480,17 @@ export const submitNewPassword = controllerWrapper(async (req, res, next) => {
         return next(
     new CustomError('BadRequestError', 'Enter all password fields!', 400));
 
-    // get key for Redis
-    const TOKEN_KEY = getKeyForOTPData(email, 'change-password-token')
+     // a unique key is generated with the combination of 'purpose' and 'email' for Redis
+    const tokenStore = new RedisService(email, 'RESET_PASSWORD_TOKEN')
+    const TOKEN_KEY = tokenStore.getKey()
 
     // find if token is stored in Redis
-    const jsonData = await client.get(TOKEN_KEY);
+    const tokenData = await tokenStore.getData(TOKEN_KEY);
 
-    const tokenData = JSON.parse(jsonData)
-
-    //if user has no token 
-    if(!tokenData || !tokenData.verified){
+    //if user has not a valid token 
+    if(!tokenData || !tokenData.verified || tokenData.purpose !== 'RESET_PASSWORD_TOKEN'){
           return next(
-    new CustomError('UnauthorizedError', 'Session has been expired!', 401));
+    new CustomError('UnauthorizedError', 'Session has been expired or not valid!', 401));
     }
 
     // if these fields does not match
@@ -504,7 +518,7 @@ export const submitNewPassword = controllerWrapper(async (req, res, next) => {
     await user.save()
 
     // delete token from Redis
-    await client.del(TOKEN_KEY)
+    await tokenStore.deleteData(TOKEN_KEY)
 
     // password changed 
     res.status(200).json({
