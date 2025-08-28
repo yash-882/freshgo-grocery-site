@@ -10,20 +10,24 @@ import {
     signUp,
     resetPassword,
     verifyPasswordResetOTP,
-    submitNewPassword, } from '../controllers/auth-controller.js';
+    submitNewPassword,
+    changeEmailWithOTP,
+    requestEmailChange,
+    checkRequiredFields, } from '../controllers/auth-controller.js';
+import {authRequiredFields} from '../constants/required-fields.js';
 
 
-//request OTP to reset password 
+//request OTP for reset password 
 authRouter.route('/reset-password')
-.post(resetPassword)
+.post(checkRequiredFields(authRequiredFields.resetPassword), resetPassword)
 
 // verifies OTP
 authRouter.route('/reset-password/verify')
-.post(verifyPasswordResetOTP)
+.post(checkRequiredFields(authRequiredFields.verifyPasswordResetOTP), verifyPasswordResetOTP)
 
 // reset password using a valid password reset token
 authRouter.route('/reset-password/submit')
-.patch(submitNewPassword)
+.patch(checkRequiredFields(authRequiredFields.submitNewPassword), submitNewPassword)
 
 
 // middleware to authorize user and allow access to protected routes
@@ -32,21 +36,29 @@ authRouter.use(authorizeUser)
 
 // validates user fields for sign-up and sends OTP for further verification 
 authRouter.route('/sign-up-validation')
-.post(validateForSignUp)
+.post(checkRequiredFields(authRequiredFields.validateForSignUp), validateForSignUp)
 
 // sign-up the user after verifying the OTP
 authRouter.route('/sign-up')
-.post(signUp)
+.post(checkRequiredFields(authRequiredFields.signUp), signUp)
 
 // login route
 authRouter.route('/login')
-.post(login)
+.post(checkRequiredFields(authRequiredFields.login), login)
 
 // PROTECTED ROUTES:
 
+// request OTP for changing email
+authRouter.route('/change-email/request')
+.post(checkRequiredFields(authRequiredFields.requestEmailChange), requestEmailChange)
+
+// verify OTP to change email
+authRouter.route('/change-email/verify')
+.patch(checkRequiredFields(authRequiredFields.changeEmailWithOTP), changeEmailWithOTP) 
+
 // change password route
 authRouter.route('/change-password')
-.patch(changePassword)
+.patch(checkRequiredFields(authRequiredFields.changePassword), changePassword)
 
 // logout route 
 authRouter.route('/logout')

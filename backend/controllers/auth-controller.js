@@ -10,11 +10,7 @@ import RedisService from "../utils/redis-service.js";
 
 // signup user after OTP validation
 export const signUp = controllerWrapper(async (req, res, next) => {
-    const {email, OTP: enteredOTP} = req.body || {}
-    
-    if(!email || !enteredOTP)
-        return next(
-    new CustomError('BadRequestError', 'Email or OTP is missing!', 400))
+    const {email, OTP: enteredOTP} = req.body
 
     // a unique key is generated with the combination of 'purpose' and 'email' for Redis)
     const otpStore = new RedisService(email, 'SIGN_UP_OTP')
@@ -99,12 +95,7 @@ export const signUp = controllerWrapper(async (req, res, next) => {
 
 // sign-up controller
 export const validateForSignUp = controllerWrapper(async (req, res, next) => {
-    const body = req.body || {};
-
-    // if form body is missing, throw an error
-    if(!body.name || !body.email || !body.password || !body.confirmPassword)
-        return next(
-    new CustomError('BadRequestError', 'Please enter all required fields!', 400));
+    const body = req.body;
 
     // if password is not confirmed correctly
     if(body.password !== body.confirmPassword)
@@ -167,12 +158,7 @@ export const validateForSignUp = controllerWrapper(async (req, res, next) => {
 
 // login controller
 export const login = controllerWrapper(async (req, res, next) => {
-    const {email, password} = req.body || {};
-
-    // if any required field is missing, throw an error
-    if(!email || !password)
-        return next(
-    new CustomError('BadRequestError', 'Please enter all required fields!', 400));
+    const {email, password} = req.body;
 
    // check if user exists in DB with the given email
     const user = await findUserByQuery({email}, true, 'Email is not registered with us!');
@@ -316,12 +302,7 @@ export const logout = controllerWrapper(async (req, res, next) => {
 })
 
 export const changePassword = controllerWrapper(async (req, res, next) => {
-    const {currentPassword, newPassword, confirmNewPassword} = req.body || {};
-
-    // if any required field is missing, throw an error
-    if(!currentPassword || !newPassword || !confirmNewPassword)
-        return next(
-    new CustomError('BadRequestError', 'Please enter all required fields!', 400));
+    const {currentPassword, newPassword, confirmNewPassword} = req.body;
 
     const user = req.user; // get user from request object
 
@@ -370,11 +351,6 @@ export const resetPassword = async (req, res, next) => {
     // get email from body
     const {email} = req.body || {}
 
-    // if email is not provided
-    if(!email)
-        return next(
-    new CustomError('BadRequestError', 'Email is required!', 400));
-
     // finds user in DB, throws error if not found 
     await findUserByQuery({email}, true, 'Email is not registered with us!')
 
@@ -418,14 +394,8 @@ export const resetPassword = async (req, res, next) => {
 export const verifyPasswordResetOTP = controllerWrapper(async (req, res, next) => {
 
     const {OTP: enteredOTP, email} = req.body;
-    
-    if(!enteredOTP || !email){
-        return next(
-    new CustomError('BadRequestError', 'Email or OTP is missing!', 400));
-    }
 
-     //to set purpose and email 
-    // (a unique key is generated with the combination of 'purpose' and 'email' for Redis)
+    // a unique key is generated with the combination of 'purpose' and 'email' for Redis
     const otpStore = new RedisService(email, 'RESET_PASSWORD_OTP')
     const OTP_KEY = otpStore.getKey()
     
@@ -468,17 +438,7 @@ export const verifyPasswordResetOTP = controllerWrapper(async (req, res, next) =
 // resets password using a valid password reset token
 export const submitNewPassword = controllerWrapper(async (req, res, next) => {
 
-    const {email, newPassword, confirmNewPassword} = req.body || {}
-
-    // if email is missing
-      if(!email)
-        return next(
-    new CustomError('BadRequestError', 'Email is required!', 400));
-
-    // if the specified fields are missing
-      if(!newPassword || !confirmNewPassword)
-        return next(
-    new CustomError('BadRequestError', 'Enter all password fields!', 400));
+    const {email, newPassword, confirmNewPassword} = req.body 
 
      // a unique key is generated with the combination of 'purpose' and 'email' for Redis
     const tokenStore = new RedisService(email, 'RESET_PASSWORD_TOKEN')
@@ -527,3 +487,145 @@ export const submitNewPassword = controllerWrapper(async (req, res, next) => {
     })
 
 })
+
+export const requestEmailChange = async (req, res, next) => {
+    const user = req.user; //ensure user is authenticated
+    const { newEmail } = req.body;
+
+    // Check if email already exists
+    const existing = await UserModel.findOne({ email: newEmail });
+    if (existing) {
+      return next(new CustomError("ConflictError", "Email already in use", 409));
+    }
+
+    // validating new email
+    await new UserModel({email: newEmail}).validate(['email'])
+
+    const otpStore = new RedisService(user.email, "EMAIL_CHANGE_OTP");
+    const OTP_KEY = otpStore.getKey()
+
+        //returns the updated OTP data (or initializes it for the first request))
+    //throws custom error if the request limit is exceeded
+    const OTPData = await trackOTPLimit({
+        OTP_KEY, //key stored in Redis
+        countType: 'reqCount', //limit for requests
+        limit: 7, //only 7 requests can be made for OTP request
+        errMessage: 'OTP requests limit reached, try again later' //err message (if occurs)
+    })
+
+    // Create Redis key
+    const OTP = generateOTP(6) // 6 digit OTP
+    const hashedOTP = await bcrypt.hash(OTP, 10)
+
+    // Store OTP, userID and newEmail
+    await otpStore.setShortLivedData({ 
+        OTP: hashedOTP, 
+        newEmail, 
+        reqCount: OTPData.user.reqCount //updated count
+    }, 300); // 5 min TTL
+
+    // Send OTP to new email
+    await sendEmail(newEmail, 'Change email', `Use this OTP to change email: ${OTP}`);
+
+    res.status(200).json({ message: "OTP sent to new email for verification" });
+}
+
+
+// verifies the OTP and change password
+export const changeEmailWithOTP = controllerWrapper(async (req, res, next) => {
+
+    const user = req.user; //ensure user is authenticated
+
+    const {OTP: enteredOTP} = req.body;
+
+    // a unique key is generated with the combination of 'purpose' and 'email' for Redis
+    const otpStore = new RedisService(user.email, 'EMAIL_CHANGE_OTP')
+    const OTP_KEY = otpStore.getKey()
+
+    
+    //returns the updated OTP data (or initializes it for the first request))
+    //throws custom error if the request limit is exceeded or data is not found
+    const OTPData = await trackOTPLimit({
+        OTP_KEY, //key stored in Redis
+        countType: 'attemptCount', //limit for requests
+        limit: 5, //only 5 requests can be made for OTP request
+        errMessage: 'OTP attempts limit reached, try again later' //err message (if occurs)
+    })
+    
+    //update attempts...
+    await otpStore.setShortLivedData({
+        ...OTPData.user, 
+        attemptCount: OTPData.user.attemptCount //updated attempts
+    }, 300)
+    
+
+    //verifies OTP and returns verified user, throws error for expiration and wrong attempts
+    await verifyOTP(OTP_KEY, enteredOTP)
+
+    // OTP was correct, update the email
+    user.email = OTPData.user.newEmail
+
+    // save updated user to DB
+    await user.save()
+
+    // delete OTPData from Redis
+    await otpStore.deleteData(OTP_KEY)
+    
+    res.status(201).json({
+        status: 'success', 
+        message: 'Email updated successfully', 
+        email: user.email
+    })
+})
+
+
+// validate fields (checks for required field)
+export const checkRequiredFields = (requiredFields='no-fields') => {
+
+    return (req, res, next) => {
+        const enteredFields = req.body;
+
+        // if body is empty
+        if(Object.keys(enteredFields).length === 0)
+          return next(
+        new CustomError("BadRequestError", 'Please enter all required fields!', 400));
+
+        // if only one field is required
+        if(!Array.isArray(requiredFields)){
+            
+            // required field is not present in enteredFields
+            if(!enteredFields[requiredFields.field])
+                return next(new CustomError("BadRequestError", `${requiredFields.label} is required!`, 400  ))
+
+            // field is present, jump to next handler
+            return next()
+        }
+
+
+        // looping over required fields
+        for(const {field: requiredField, label} of requiredFields){
+        
+        // checks if the required field is present in entered fields
+        const field = enteredFields[requiredField]
+
+        // prioritize boolean or number (because 0 or false is considered falsy)
+        if(typeof field === 'boolean' || typeof field === 'number')
+            continue; //valid field, jump to next field
+
+        // field is missing
+        const isMissing = field === undefined || field === null
+        
+        // string is empty
+        const isEmptyString = typeof field === 'string' && !field.trim().length
+        
+        if(isMissing || isEmptyString){
+
+            const errMessage = `${label} is required!`
+            return next(new CustomError("BadRequestError", errMessage, 400));
+        }  
+    }
+
+    // all required fields are present, jump to next handler
+    next()
+    }
+};

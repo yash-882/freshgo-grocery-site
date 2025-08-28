@@ -8,6 +8,7 @@ class RedisService {
         this.purposes = {
             RESET_PASSWORD_OTP: 'reset-password',
             SIGN_UP_OTP: 'sign-up',
+            EMAIL_CHANGE_OTP: 'change-email',
             RESET_PASSWORD_TOKEN: 'reset-password-token',
             DATA_CACHE: 'cached-data'
         }
@@ -31,11 +32,9 @@ class RedisService {
     if(isObject){
         data = JSON.stringify(data)
     }
-
     
     // temporarily (ttl example: 300 -> 5 minutes) store data in Redis
     await client.set(this.getKey(), data, {expiration:{type: 'EX', value: ttl}})
-    console.log('dhhhata');
     }
 
 
