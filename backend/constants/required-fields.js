@@ -1,5 +1,5 @@
-// contains array of fields required for specific routes of /auth
-// each key represents an auth route
+// fields required in specific routes of /auth
+// each key represents a collection or a single field
 export const authRequiredFields = {
     signUp: [
         // fields
@@ -14,10 +14,10 @@ export const authRequiredFields = {
         { field: 'email', label: 'Email' },
         { field: 'confirmPassword', label: 'Password confirmation' },
     ],
-    resetPassword: 
+    resetPassword: [
         // fields
         { field: 'email', label: 'Email' }
-    ,
+    ],
     login: [
         // fields
         { field: 'email', label: 'Email' },
@@ -41,10 +41,10 @@ export const authRequiredFields = {
         { field: 'confirmNewPassword', label: 'New password confirmation' },
         { field: 'newPassword', label: 'New password' },
     ],
-    changeEmailWithOTP: 
+    changeEmailWithOTP: [
         // fields
-        { field: 'OTP', label: 'OTP' },
-
+        { field: 'OTP', label: 'OTP' }
+    ],
     verifyPasswordResetOTP: [
         // fields
         { field: 'email', label: 'Email' },

@@ -1,5 +1,5 @@
 import controllerWrapper from "../utils/controller-wrapper.js";
-import bcrypt from 'bcrypt';
+import bcrypt, { hash } from 'bcrypt';
 import UserModel from "../models/user-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../utils/jwt-user-auth.js";
