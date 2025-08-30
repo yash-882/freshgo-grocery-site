@@ -127,7 +127,10 @@ export const validateForSignUp = controllerWrapper(async (req, res, next) => {
     })
 
     // create a new mongoose document (not saved)
-    const newUser = new UserModel(body)
+    const newUser = new UserModel({
+        ...body, 
+        role: ['user'] //force role to 'user'
+    })
 
     // validate user fields, throws error if any field is invalid
     await newUser.validate()

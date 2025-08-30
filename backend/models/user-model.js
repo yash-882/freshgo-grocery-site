@@ -32,7 +32,10 @@ const UserSchema = new Schema({
     },
     role: {
         type: [String], //array of strings for roles
-        enum: ['user', 'admin'],
+        enum: {
+            values:['user', 'admin', 'seller'],
+            message: '{VALUE} is not a valid role'
+        },
         default: ['user'], // default role is 'user'
         lowercase: true
     },
