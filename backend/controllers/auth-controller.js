@@ -1,5 +1,5 @@
 import controllerWrapper from "../utils/controller-wrapper.js";
-import bcrypt, { hash } from 'bcrypt';
+import bcrypt from 'bcrypt';
 import UserModel from "../models/user-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "../utils/jwt-user-auth.js";
@@ -632,3 +632,18 @@ export const checkRequiredFields = (requiredFields='no-fields') => {
     next()
     }
 };
+
+// allow requests to protected routes based on role
+export const roleBasedAccess = (role) => {
+    return (req, res, next) => {
+        const user = req.user; //get user 
+    
+        // invalid role
+        if(!user.role.includes(role)){
+            return next(new CustomError('ForbiddenError', 'Not allowed to this route!', 403))
+        }
+    
+        // valid role for this request
+        next()
+    }
+} 

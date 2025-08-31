@@ -9,6 +9,7 @@ import GlobalErrorHandler from './error-handling/global-error-handler.js';
 
 // npm packages
 import cookieParser from 'cookie-parser';
+import adminRouter from './routes/admin-route.js';
 
 // parse JSON data
 app.use(express.json())
@@ -18,6 +19,9 @@ app.use(cookieParser())
 
 // auth router
 app.use('/api/auth', authRouter)
+
+// admin router
+app.use('/api/admin', adminRouter)
 
 // global error handler middleware
 app.use(GlobalErrorHandler)
