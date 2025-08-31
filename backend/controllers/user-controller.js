@@ -185,3 +185,76 @@ export const deleteUsers = async (req, res, next) => {
             session.endSession() // end transaction session
     }
 }
+
+// ------------------------------------------------------------------------------------
+// handlers for the current user (Deletion and creation is present in /auth)
+// authorized with any role(user, admin, seller) can access these handlers below
+// ------------------------------------------------------------------------------------
+
+// normal user: update own profile 
+export const updateMyProfile = controllerWrapper(async (req, res, next) => {
+    const userID = req.user._id; //current user
+    const updates = {
+        ...req.body,
+        //ensures password and email cannot be updated directly
+        password: undefined, 
+        email: undefined,
+    }
+    
+    if(updates.role){
+
+        // don't allow a user/seller to change their role to 'admin'
+        if(updates.role === 'admin')
+            return next(
+        new CustomError('BadRequestError', 'You cannot change your role to admin!', 400))
+
+        // user already has the role they are requesting
+        else if(req.user.role.includes(updates.role)){
+             return next(
+        new CustomError('BadRequestError', `You already have the role: ${updates.role}`, 400))
+
+        }
+
+        else{
+            // mongodb operator for pushing an element in array field 
+            // (only inserts if the element doesn't exist in array)
+            updates.$addToSet = {role: updates.role }
+        }
+
+        // delete role
+        delete updates.role
+    }
+
+    // updating user...
+    const user = await UserModel.findByIdAndUpdate(userID, updates, {
+        runValidators: true, 
+        new: true 
+    });
+    
+    if (!user) {
+        return next(new CustomError('NotFoundError', 'Account may have been deleted', 404));
+    }
+
+    res.status(200).json({
+         status: 'success',
+         message: 'Profile updated successfully',
+         data: {     
+         user 
+         }
+        });
+});
+
+// normal user: get own profile 
+export const getMyProfile = (req, res, next) => {
+
+    // user is not authenticated (extra check for avoiding wrong serving of data)
+  if (!req.user) {
+    return next(new CustomError("UnauthorizedError", "Not authenticated!", 401));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Profile fetched successfully',
+    data: {user: req.user},
+  });
+};
