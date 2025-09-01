@@ -3,7 +3,6 @@ const authRouter = Router();
 
 import { 
     login, 
-    authorizeUser, 
     logout, 
     changePassword,
     validateForSignUp, 
@@ -13,10 +12,14 @@ import {
     submitNewPassword,
     changeEmailWithOTP,
     requestEmailChange,
-    checkRequiredFields,
-    verifyPassword,
     deleteMyAccount, } from '../controllers/auth-controller.js';
 import {authRequiredFields} from '../constants/required-fields.js';
+
+// middlewares
+import { 
+    authorizeUser, 
+    checkRequiredFields, 
+    verifyPassword } from '../middlewares/auth-middleware.js';
 
 
 //request OTP for reset password 
