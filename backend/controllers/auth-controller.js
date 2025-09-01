@@ -7,6 +7,7 @@ import { findUserByQuery, bcryptCompare, generateOTP, verifyOTP, trackOTPLimit }
 import client from "../configs/redis-client.js";
 import sendEmail from "../utils/mailer.js";
 import RedisService from "../utils/redis-service.js";
+import mongoose from "mongoose";
 
 // signup user after OTP validation
 export const signUp = controllerWrapper(async (req, res, next) => {
@@ -646,4 +647,70 @@ export const roleBasedAccess = (role) => {
         // valid role for this request
         next()
     }
-} 
+}
+
+// verify password middleware
+export const verifyPassword = controllerWrapper(async (req, res, next) => {
+    const {password} = req.body
+    const user = req.user
+
+    // throws custom error for password 
+    await bcryptCompare({plain: password, hashed: user.password}, 'Incorrect password!')
+
+    // password was correct, set verified to true
+    req.verified = true;
+    next()
+})
+
+// delete my account (current user)
+export const deleteMyAccount = controllerWrapper(async (req, res, next) => {
+
+    // not verified via password checker middleware
+    if(!req.verified){
+        return next(new CustomError('ForbiddenError', 'Not allowed to this route!', 403))
+    }
+
+    const userID = req.user.id; //get user ID from authorized user;
+
+    let session;
+    let user;
+
+    try {
+
+        // create a session for deletion
+        session = await mongoose.startSession()
+
+        // run transaction (mongoDB commits or aborts the transaction automatically)
+        await session.withTransaction(async () => {
+            // MORE OPERATIONS WILL BE ADDED LATER
+
+            // deleting user...
+            user = await UserModel.findByIdAndDelete(userID, { session })
+
+            // extra check to avoid sending an invalid response
+            if (!user) {
+
+                // throwing makes mongoDB to abort the transaction 
+                throw new CustomError('NotFoundError', `User not found for deletion`, 404)
+            }
+
+        })
+
+    // clear all tokens
+    res.clearCookie('AT', { httpOnly: true, sameSite: 'strict'})
+    res.clearCookie('RT', { httpOnly: true, sameSite: 'strict'})
+
+        // user deleted successfully
+        res.status(204).send();
+    }
+    catch (err) {
+
+        // error occured 
+        next(err)
+
+    } finally {
+
+        if (session)
+            session.endSession() // end transaction session
+    }
+})

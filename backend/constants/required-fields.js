@@ -50,4 +50,8 @@ export const authRequiredFields = {
         { field: 'email', label: 'Email' },
         { field: 'OTP', label: 'OTP' }
     ],
+
+    // fields 
+    verifyPassword: {field: 'password', label: 'Password'},
+
 }

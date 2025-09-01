@@ -13,7 +13,9 @@ import {
     submitNewPassword,
     changeEmailWithOTP,
     requestEmailChange,
-    checkRequiredFields, } from '../controllers/auth-controller.js';
+    checkRequiredFields,
+    verifyPassword,
+    deleteMyAccount, } from '../controllers/auth-controller.js';
 import {authRequiredFields} from '../constants/required-fields.js';
 
 
@@ -59,6 +61,13 @@ authRouter.route('/change-email/verify')
 // change password route
 authRouter.route('/change-password')
 .patch(checkRequiredFields(authRequiredFields.changePassword), changePassword)
+
+// delete my account route
+authRouter.route('/delete-account').post(
+checkRequiredFields(authRequiredFields.verifyPassword), 
+verifyPassword, 
+deleteMyAccount)
+
 
 // logout route 
 authRouter.route('/logout')
