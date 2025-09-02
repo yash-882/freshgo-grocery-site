@@ -2,9 +2,9 @@ import client from '../configs/redis-client.js'
 
 // Redis operations
 class RedisService {
-    constructor(email, purpose){
-    //to set purpose and email 
-    // (a unique key is generated with the combination of 'purpose' and 'email' for Redis)
+    constructor(uniqueID, purpose){
+    //to set purpose and uniqueKey 
+    // (a unique key is generated with the combination of 'purpose' and 'uniqueID' for Redis)
         this.purposes = {
             RESET_PASSWORD_OTP: 'reset-password',
             SIGN_UP_OTP: 'sign-up',
@@ -12,16 +12,16 @@ class RedisService {
             RESET_PASSWORD_TOKEN: 'reset-password-token',
             DATA_CACHE: 'cached-data'
         }
-        this.email = email;
+        this.uniqueID = uniqueID;
         this.purpose = this.purposes[purpose] || purpose || 'unknown-purpose'
     }
     
 // always prefix the Redis key with a unique action
-// this helps Redis to differentiate OTP requests for the same email across routes (e.g., /sign-up, /change-password)
-// example: /sign-up → sign-up:<email>, /change-password → change-password:<email>
+// this helps Redis to differentiate OTP requests for the same uniqueID across routes (e.g., /sign-up, /change-password)
+// example: /sign-up → sign-up:<uniqueID>, /change-password → change-password:<uniqueID>
     getKey(){
 
-    return `${this.purpose}:${this.email}` 
+    return `${this.purpose}:${this.uniqueID}` 
 
     }
 
