@@ -245,7 +245,7 @@ export const updateMyProfile = controllerWrapper(async (req, res, next) => {
 });
 
 // normal user: get own profile 
-export const getMyProfile = (req, res, next) => {
+export const getMyProfile = controllerWrapper(async (req, res, next) => {
 
     // user is not authenticated (extra check for avoiding wrong serving of data)
   if (!req.user) {
@@ -254,7 +254,6 @@ export const getMyProfile = (req, res, next) => {
 
   res.status(200).json({
     status: 'success',
-    message: 'Profile fetched successfully',
-    data: {user: req.user},
+    data: {profile: req.user},
   });
-};
+});

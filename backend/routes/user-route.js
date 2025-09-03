@@ -8,7 +8,7 @@ import { authorizeUser } from '../middlewares/auth-middleware.js';
 
 userRouter.use(authorizeUser)
 
-userRouter.route('/')
+userRouter.route('/me')
 .get(getMyProfile) //get profile
 .patch(updateMyProfile) //update profile
 
