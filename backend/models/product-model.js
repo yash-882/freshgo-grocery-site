@@ -79,9 +79,24 @@ const ProductSchema = new Schema({
     seller: {
         type: Schema.Types.ObjectId,
         ref: 'user',
+        immutable: true,
         required: [true, 'Seller is required'],
-    }
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now,
+        immutable: true
+    },
 })
+
+
+// category + Price (filter & sort by price)
+ProductSchema.index({ category: 1, price: 1 });
+
+// category + Name (search within category)
+ProductSchema.index({ category: 1, name: 1 });
+
 
 const ProductModel = model('product', ProductSchema);
 
