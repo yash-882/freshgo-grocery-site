@@ -11,6 +11,7 @@ import GlobalErrorHandler from './error-handling/global-error-handler.js';
 import cookieParser from 'cookie-parser';
 import adminRouter from './routes/admin-route.js';
 import userRouter from './routes/user-route.js';
+import productRouter from './routes/product-route.js';
 
 // parse JSON data
 app.use(express.json())
@@ -26,6 +27,9 @@ app.use('/api/admin', adminRouter)
 
 // user router (accessible by all roles (user, seller, admin))
 app.use('/api/user', userRouter)
+
+// product router (accessible by all roles (user, seller, admin, unauthenticated user))
+app.use('/api/product', productRouter)
 
 // global error handler middleware
 app.use(GlobalErrorHandler)
