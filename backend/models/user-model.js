@@ -16,9 +16,9 @@ const UserSchema = new Schema({
         required: [true, 'Email is required'],
         unique: true,
         validate: {
-            validator: function (){
+            validator: function (email){
                 // Regular expression for validating email format
-                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email);
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
             },
             message: () => 'Invalid email format!'
         },

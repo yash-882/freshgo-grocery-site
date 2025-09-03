@@ -7,8 +7,8 @@ const ProductSchema = new Schema({
         required: true,
         trim: true,
         validate: {
-            validator: function () {
-                this.name.length <= 30 || this.name.length >= 2;
+            validator: function (name) {
+                return name.length <= 30 && name.length >= 2;
             }, 
             message: () => 'Name must be between 2 and 30 characters long'
         }
@@ -60,8 +60,8 @@ const ProductSchema = new Schema({
         trim: true,
         lowercase: true,
         validate: {
-            validator: function (){
-                return this.tags.length >= 1 && this.tags.length <= 20
+            validator: function (tags){
+                return tags.length >= 1 && tags.length <= 20
             },
             message: () => 'Tags (1-20 required)'
         }
@@ -70,8 +70,8 @@ const ProductSchema = new Schema({
         type: [String],
         required: true,
          validate: {
-            validator: function (){
-                return this.images.length >= 1 && this.images.length <= 5
+            validator: function (images){
+                return images.length >= 1 && images.length <= 5
             },
             message: () => 'Images (1-5 required)'
         }
