@@ -58,9 +58,13 @@ export const createProduct = controllerWrapper(async (req, res, next) => {
 // get multiple products (public route)
 export const getProducts = controllerWrapper(async (req, res, next) => {
 
-  const filter = req.query; //filter  
+  const {filter, sort, limit, skip, select } = req.sanitizedQuery;  
 
   const products = await ProductModel.find(filter)
+  .sort(sort)
+  .skip(skip)
+  .limit(limit)
+  .select(select)
   .populate({
     //get also the seller of product
     path: 'seller', //a field of Product schema that stores user ID
@@ -83,10 +87,14 @@ export const getProducts = controllerWrapper(async (req, res, next) => {
 // get my products  (accessible roles: Seller only)
 export const getMyProducts = controllerWrapper(async (req, res, next) => {
   const userID = req.user.id; //seller
-  const filter = req.query; //filter  
+  const {filter, sort, limit, skip, select } = req.sanitizedQuery; //filter  
 
   // getting seller products...
-  const products = await ProductModel.find({...filter, seller: userID}); 
+  const products = await ProductModel.find({...filter, seller: userID})
+  .sort(sort)
+  .skip(skip)
+  .limit(limit)
+  .select(select); 
 
   if(products.length === 0){
     return next(new CustomError('NotFoundError', 'You have no products yet', 404));
@@ -182,7 +190,7 @@ export const deleteMyProductByID = controllerWrapper(async (req, res, next) => {
 
 // delete multiple products (accessible roles: Seller only)
 export const deleteMyProducts = controllerWrapper(async (req, res, next) => {
-  let filter  = req.query; //filter
+  let {filter}  = req.sanitizedQuery; //filter
   const userID = req.user.id; //current seller
 
   // deleting

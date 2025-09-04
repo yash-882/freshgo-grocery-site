@@ -12,6 +12,12 @@ import cookieParser from 'cookie-parser';
 import adminRouter from './routes/admin-route.js';
 import userRouter from './routes/user-route.js';
 import productRouter from './routes/product-route.js';
+import qs from 'qs';
+
+// parses query strings ("?price[gt]=20&sort=-price" -> {price: {gt: "20"}, sort="-price"})
+app.set("query parser", (query)=> {
+    return qs.parse(query)
+})
 
 // parse JSON data
 app.use(express.json())

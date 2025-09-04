@@ -53,6 +53,7 @@ const ProductSchema = new Schema({
     score: {
         type: Number,
         default: 0,
+        select: false
     },
     tags: {
         type: [String],
@@ -81,6 +82,7 @@ const ProductSchema = new Schema({
         ref: 'user',
         immutable: true,
         required: [true, 'Seller is required'],
+        select: false
     },
 
     createdAt: {
