@@ -21,9 +21,9 @@ adminRouter.use(authorizeUser, roleBasedAccess('admin'));
 
 // operations for multiple user
 adminRouter.route('/user-access')
-    .get(getUsers)
-    .patch(updateUsers)
-    .delete(deleteUsers)
+    .get(handleQuery(schemaRegistery.user, true), getUsers)
+    .patch(handleQuery(schemaRegistery.user, true), updateUsers)
+    .delete(handleQuery(schemaRegistery.user, true), deleteUsers)
 
 // operations for a single user
 adminRouter.route('/user-access/:id')

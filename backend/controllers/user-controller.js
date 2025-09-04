@@ -27,10 +27,14 @@ export const getUserByID = controllerWrapper(async (req, res, next) => {
 //  get multiple users
 export const getUsers = controllerWrapper(async (req, res, next) => {
     
-    const query = req.query; //filter or {}
+    const {filter, sort, limit, skip, select } = req.sanitizedQuery; //filter 
 
-    // getting all users
-    const users = await UserModel.find(query);
+    // getting  multiple users
+    const users = await UserModel.find(filter)
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
+    .select(select); 
 
     // send response 
     res.status(200).json({
@@ -60,7 +64,7 @@ export const updateUserByID = controllerWrapper(async (req, res, next) => {
     }
 
     // updating user...
-    const user = await UserModel.findByIdAndUpdate(userID, updates, {
+    const user = await UserModel.findByIdAndUpdate(userID, {$set: updates}, {
         new: true,
         runValidators: true
     })
@@ -79,13 +83,13 @@ export const updateUserByID = controllerWrapper(async (req, res, next) => {
 
 // update multiple users
 export const updateUsers = controllerWrapper(async (req, res, next) => {
-    const query = req.query; // getting user id from params
+    const {filter} = req.sanitizedQuery; // getting user id from params
 
     const updates = req.body; //changes for updation
 
 
     // updating users...
-    const users = await UserModel.updateMany(query, updates, {
+    const users = await UserModel.updateMany(filter, {$set: updates}, {
         new: true,
         runValidators: true
     })
@@ -145,7 +149,7 @@ export const deleteUserByID = async (req, res, next) => {
 
 // delete multiple user by filter
 export const deleteUsers = async (req, res, next) => {
-    const query = req.query; // getting user id from params
+    const {filter} = req.sanitizedQuery; // getting user id from params
 
     let session;
     let deletionResult;
@@ -160,7 +164,7 @@ export const deleteUsers = async (req, res, next) => {
             // MORE OPERATIONS WILL BE ADDED LATER
 
             // deleting users...
-            deletionResult = await UserModel.deleteMany(query, { session })
+            deletionResult = await UserModel.deleteMany(filter, { session })
 
             // users not found
             if (!deletionResult.deletedCount === 0) {
