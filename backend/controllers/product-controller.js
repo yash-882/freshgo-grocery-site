@@ -204,3 +204,86 @@ export const deleteMyProducts = controllerWrapper(async (req, res, next) => {
   // deleted successfully
   res.status(204).send();
 })
+
+// update multiple products (accessible roles: Admin only)
+export const adminUpdateProducts = controllerWrapper(async (req, res, next) => {
+  if (Object.keys(req.body).length === 0) {
+    return new CustomError('BadRequestError', 'Body is empty for updation!', 400);
+  }
+
+  const { filter } = req.sanitizedQuery; // which products to update
+  const updates = req.body;
+
+  const result = await ProductModel.updateMany(filter, { $set: updates });
+
+  if (result.matchedCount === 0) {
+    return next(new CustomError('NotFoundError', 'No products found for update', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: `${result.modifiedCount} product(s) updated successfully`
+  });
+});
+
+// delete multiple products (accessible roles: Admin only)
+export const adminDeleteProducts = controllerWrapper(async (req, res, next) => {
+  const { filter } = req.sanitizedQuery;
+
+  const deletedProducts = await ProductModel.deleteMany(filter);
+
+  if (deletedProducts.deletedCount === 0) {
+    return next(new CustomError('NotFoundError', 'No products found for deletion', 404));
+  }
+
+  res.status(204).send();
+});
+
+// update product by ID (accessible roles: Admin only)
+export const adminUpdateProductByID = controllerWrapper(async (req, res, next) => {
+  if (Object.keys(req.body).length === 0) {
+    return new CustomError('BadRequestError', 'Body is empty for updation!', 400);
+  }
+
+  const productID = req.params.id;
+  const updates = req.body;
+
+  const product = await ProductModel.findById(productID);
+
+  if (!product) {
+    return next(new CustomError('NotFoundError', 'Product not found', 404));
+  }
+
+
+  Object.assign(product, {
+    ...updates,
+
+    // ensure product's score and seller ID remain unchanged
+    seller: product.seller,
+    score: product.score
+  });
+
+  // saving updated product
+  await product.save();
+
+  // updated successfully
+  res.status(200).json({
+    status: 'success',
+    message: 'Product updated successfully',
+    data: product
+  });
+});
+
+// delete product by ID (accessible roles: Admin only)
+export const adminDeleteProductByID = controllerWrapper(async (req, res, next) => {
+  const productID = req.params.id;
+
+  const product = await ProductModel.findByIdAndDelete(productID);
+
+  if (!product) {
+    return next(new CustomError('NotFoundError', 'Product not found', 404));
+  }
+
+  // deleted successfully
+  res.status(204).send()
+});
