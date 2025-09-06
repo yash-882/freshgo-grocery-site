@@ -8,6 +8,7 @@ import client from "../configs/redis-client.js";
 import sendEmail from "../utils/mailer.js";
 import RedisService from "../utils/redis-service.js";
 import mongoose from "mongoose";
+import ProductModel from "../models/product-model.js";
 
 // signup user after OTP validation
 export const signUp = controllerWrapper(async (req, res, next) => {
@@ -513,13 +514,12 @@ export const deleteMyAccount = controllerWrapper(async (req, res, next) => {
 
     // not verified via password checker middleware
     if(!req.verified){
-        return next(new CustomError('ForbiddenError', 'Not allowed to this route!', 403))
+        return next(new CustomError('ForbiddenError', 'Cannot delete account without password verification!', 403))
     }
 
     const userID = req.user.id; //get user ID from authorized user;
 
     let session;
-    let user;
 
     try {
 
@@ -528,16 +528,21 @@ export const deleteMyAccount = controllerWrapper(async (req, res, next) => {
 
         // run transaction (mongoDB commits or aborts the transaction automatically)
         await session.withTransaction(async () => {
-            // MORE OPERATIONS WILL BE ADDED LATER
 
             // deleting user...
-            user = await UserModel.findByIdAndDelete(userID, { session })
+            const user = await UserModel.findByIdAndDelete(userID).session(session)
+
 
             // extra check to avoid sending an invalid response
             if (!user) {
 
                 // throwing makes mongoDB to abort the transaction 
                 throw new CustomError('NotFoundError', `User not found for deletion`, 404)
+            }
+
+            // only delete products if the user is 'Seller'
+            if(user.role.includes('seller')){
+                await ProductModel.deleteMany({seller: user._id}).session(session)
             }
 
         })
