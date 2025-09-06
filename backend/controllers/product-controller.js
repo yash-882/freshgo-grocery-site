@@ -3,6 +3,7 @@
 import CustomError from '../error-handling/custom-error-class.js';
 import ProductModel from '../models/product-model.js'; 
 import controllerWrapper from '../utils/controller-wrapper.js'; 
+import sendApiResponse from '../utils/api-response.js';
 
 // create new product (accessible roles: Seller only)
 export const createProduct = controllerWrapper(async (req, res, next) => {
@@ -48,11 +49,10 @@ export const createProduct = controllerWrapper(async (req, res, next) => {
   const newProduct = await ProductModel.create(productData);
 
   //product created
-  res.status(201).json({
-    status: 'success',
-    data: newProduct //product(s)
-  
-  });
+  sendApiResponse(res, 201, {
+    message: 'Product created successfully',
+    data: newProduct
+})
 })
 
 // get multiple products (public route)
@@ -77,11 +77,10 @@ export const getProducts = controllerWrapper(async (req, res, next) => {
   }
   
 // send products
-  res.status(200).json({
-    status: 'success',
+  sendApiResponse(res, 200, {
+    data: products,
     dataLength: products.length,
-    data: products
-  });
+})
 })
 
 // get my products  (accessible roles: Seller only)
@@ -90,6 +89,8 @@ export const getMyProducts = controllerWrapper(async (req, res, next) => {
   const {filter, sort, limit, skip, select } = req.sanitizedQuery; //filter  
 
   // getting seller products...
+  
+  
   const products = await ProductModel.find({...filter, seller: userID})
   .sort(sort)
   .skip(skip)
@@ -100,12 +101,12 @@ export const getMyProducts = controllerWrapper(async (req, res, next) => {
     return next(new CustomError('NotFoundError', 'You have no products yet', 404));
   }
   
-// send products
-  res.status(200).json({
-    status: 'success',
+  // send products
+  sendApiResponse(res, 200, {
+    data: products,
     dataLength: products.length,
-    data: products
-  });
+})
+
 })
 
 // get single product by ID (public route)
@@ -125,10 +126,10 @@ export const getProductByID = controllerWrapper(async (req, res, next) => {
     return next(new CustomError('NotFoundError', 'Product not found', 404));
   }
 
-  res.status(200).json({ 
-    status: 'success', 
-    data: product 
-  });
+    // send product
+  sendApiResponse(res, 200, {
+    data: product,
+})
 });
 
 // update product by ID (accessible roles: Seller only)
@@ -162,12 +163,11 @@ export const updateMyProductByID = controllerWrapper(async (req, res, next) => {
   // saving updated product
   await product.save()
 
-  // updated successfully
-  res.status(200).json({
-    status: 'success',
+    // updated successfully
+  sendApiResponse(res, 200, {
     message: 'Product updated successfully',
     data: product,
-  });
+})
 
 })
 
@@ -185,7 +185,10 @@ export const deleteMyProductByID = controllerWrapper(async (req, res, next) => {
   }
 
   // deleted successfully
-  res.status(204).send();
+  sendApiResponse(res, 200, {
+    data: deletedProduct,
+    message: 'Product deleted successfully',
+})
 })
 
 // delete multiple products (accessible roles: Seller only)
@@ -194,15 +197,17 @@ export const deleteMyProducts = controllerWrapper(async (req, res, next) => {
   const userID = req.user.id; //current seller
 
   // deleting
-  const deletedProduct = await ProductModel.deleteMany({...filter, seller: userID});
+  const deletedProducts = await ProductModel.deleteMany({...filter, seller: userID});
 
   // product not found
-  if(deletedProduct.deletedCount === 0){
+  if(deletedProducts.deletedCount === 0){
     return next(new CustomError('NotFoundError', 'No products found for deletion', 404))
   }
 
   // deleted successfully
-  res.status(204).send();
+  sendApiResponse(res, 200, {
+    message: `Deleted ${deletedProducts.deletedCount} product(s) successfully`,
+})
 })
 
 // update multiple products (accessible roles: Admin only)
@@ -220,10 +225,11 @@ export const adminUpdateProducts = controllerWrapper(async (req, res, next) => {
     return next(new CustomError('NotFoundError', 'No products found for update', 404));
   }
 
-  res.status(200).json({
-    status: 'success',
-    message: `${result.modifiedCount} product(s) updated successfully`
-  });
+    // updated successfully
+  sendApiResponse(res, 200, {
+    message: `Updated ${result.modifiedCount} product(s) successfully`,
+  })
+
 });
 
 // delete multiple products (accessible roles: Admin only)
@@ -236,7 +242,11 @@ export const adminDeleteProducts = controllerWrapper(async (req, res, next) => {
     return next(new CustomError('NotFoundError', 'No products found for deletion', 404));
   }
 
-  res.status(204).send();
+    // deleted successfully
+  sendApiResponse(res, 200, {
+    message: `Deleted ${deletedProducts.deletedCount} product(s) successfully`,
+  })
+
 });
 
 // update product by ID (accessible roles: Admin only)
@@ -267,23 +277,26 @@ export const adminUpdateProductByID = controllerWrapper(async (req, res, next) =
   await product.save();
 
   // updated successfully
-  res.status(200).json({
-    status: 'success',
-    message: 'Product updated successfully',
-    data: product
-  });
+  sendApiResponse(res, 200, {
+    data: product, //updated product
+    message: 'Product deleted successfully',
+})
 });
 
 // delete product by ID (accessible roles: Admin only)
 export const adminDeleteProductByID = controllerWrapper(async (req, res, next) => {
   const productID = req.params.id;
 
-  const product = await ProductModel.findByIdAndDelete(productID);
+  const deletedProduct = await ProductModel.findByIdAndDelete(productID);
 
-  if (!product) {
+  if (!deletedProduct) {
     return next(new CustomError('NotFoundError', 'Product not found', 404));
   }
 
-  // deleted successfully
-  res.status(204).send()
+    // deleted successfully
+  sendApiResponse(res, 200, {
+    data: deletedProduct,
+    message: 'Product deleted successfully',
+})
+
 });

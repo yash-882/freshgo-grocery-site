@@ -6,6 +6,7 @@ import controllerWrapper from "../utils/controller-wrapper.js";
 import { findUserByQuery } from "../utils/auth-helpers.js";
 import mongoose from "mongoose";
 import ProductModel from "../models/product-model.js";
+import sendApiResponse from "../utils/api-response.js";
 
 // -------------------------------------------
 // Only role with 'admin' can access the handlers below
@@ -18,11 +19,11 @@ export const getUserByID = controllerWrapper(async (req, res, next) => {
     // throws custom error if user not found
     const user = await findUserByQuery({ _id: userID }, true, 'User not found')
 
-    // send response
-    res.status(200).json({
-        status: 'success',
-        data: { user }
-    })
+    // send user data
+  sendApiResponse(res, 200, {
+    data: user,
+})
+
 })
 
 //  get multiple users
@@ -37,14 +38,13 @@ export const getUsers = controllerWrapper(async (req, res, next) => {
     .limit(limit)
     .select(select); 
 
-    // send response 
-    res.status(200).json({
-        status: 'success',
-        message: users.length === 0 ? 'No users found' : `${users.length} users found`,
-        data: {
-            dataLength: users.length,
-            users 
-        }
+    if(users.length === 0)    
+        return next(new CustomError('NotFoundError', 'No users found', 404));
+  
+
+    // send users data 
+    sendApiResponse(res, 200, {
+        data: users,
     })
 })
 
@@ -74,12 +74,12 @@ export const updateUserByID = controllerWrapper(async (req, res, next) => {
     if (!user)
         return next(new CustomError('NotFoundError', 'User not found for updation', 404))
 
-    // user updated successfully
-    res.status(200).json({
-        status: 'success',
-        message: 'User updated successfully',
-        data: { user }
-    });
+
+   // updated successfully
+  sendApiResponse(res, 200, {
+    data: user,
+    message: 'User deleted successfully',
+})
 })
 
 // update multiple users
@@ -99,11 +99,10 @@ export const updateUsers = controllerWrapper(async (req, res, next) => {
     if (users.matchedCount === 0)
         return next(new CustomError('NotFoundError', 'No users found for updation', 404))
 
-    // user updated successfully
-    res.status(200).json({
-        status: 'success',
-        message: `${users.matchedCount} users updated successfully`,
-    });
+    // users updated successfully
+    sendApiResponse(res, 200, {
+        message: `Updated ${users.modifiedCount} user(s) successfully`,
+    })
 })
 
 // delete a user by id
@@ -111,6 +110,7 @@ export const deleteUserByID = async (req, res, next) => {
     const userID = req.params.id; // getting user id from params
 
     let session;
+    let user;
 
     try {
 
@@ -121,7 +121,7 @@ export const deleteUserByID = async (req, res, next) => {
         await session.withTransaction(async () => {
 
             // deleting user...
-            const user = await UserModel.findByIdAndDelete(userID).session(session)
+            user = await UserModel.findByIdAndDelete(userID).session(session)
 
             // user not found
             if (!user) {
@@ -138,9 +138,11 @@ export const deleteUserByID = async (req, res, next) => {
 
         })
 
-
         // user deleted successfully
-        res.status(204).send();
+          sendApiResponse(res, 200, {
+            data: user, //deleted user
+            message: 'User deleted successfully',
+        })
     }
     catch (err) {
 
@@ -159,6 +161,7 @@ export const deleteUsers = async (req, res, next) => {
     const {filter} = req.sanitizedQuery; // getting user id from params
 
     let session;
+    let deletionResult;
 
     try {
         // prevents from deleting all users 
@@ -190,13 +193,15 @@ export const deleteUsers = async (req, res, next) => {
             await ProductModel.deleteMany({seller: {$in: usersIDs}}).session(session)
 
             // deleting users...
-            await UserModel.deleteMany({_id: {$in: usersIDs}}).session(session)
+            deletionResult = await UserModel.deleteMany({_id: {$in: usersIDs}}).session(session)
 
         })
 
 
         // users deleted successfully
-        res.status(204).send();
+          sendApiResponse(res, 200, {
+            message: `Deleted ${deletionResult.deletedCount} user(s) successfully`,
+        })
     }
     catch (err) {
 
@@ -259,13 +264,11 @@ export const updateMyProfile = controllerWrapper(async (req, res, next) => {
         return next(new CustomError('NotFoundError', 'Account may have been deleted', 404));
     }
 
-    res.status(200).json({
-         status: 'success',
-         message: 'Profile updated successfully',
-         data: {     
-         user 
-         }
-        });
+    // profile updated successfully
+    sendApiResponse(res, 200, {
+        data: user, //updated profile
+        message: 'Profile updated successfully',
+    })
 });
 
 // normal user: get own profile 
@@ -276,8 +279,8 @@ export const getMyProfile = controllerWrapper(async (req, res, next) => {
     return next(new CustomError("UnauthorizedError", "Not authenticated!", 401));
   }
 
-  res.status(200).json({
-    status: 'success',
-    data: {profile: req.user},
-  });
+    // send user profile
+    sendApiResponse(res, 200, {
+        data: req.user
+    })
 });

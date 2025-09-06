@@ -9,6 +9,7 @@ import sendEmail from "../utils/mailer.js";
 import RedisService from "../utils/redis-service.js";
 import mongoose from "mongoose";
 import ProductModel from "../models/product-model.js";
+import sendApiResponse from "../utils/api-response.js";
 
 // signup user after OTP validation
 export const signUp = controllerWrapper(async (req, res, next) => {
@@ -80,19 +81,19 @@ export const signUp = controllerWrapper(async (req, res, next) => {
     // delete password before responding
     newUser.password = undefined
 
+    
     // send response
-    res.status(201).json({
-        status: 'success',
+    sendApiResponse(res, 201, {
         message: 'Account created successfully',
-        data: {
-            user: newUser,
-        }
-    });
+        data: newUser,
+    })
 
     // send welcome email after sign-up
-    await sendEmail(newUser.email, 'Welcome to FreshGo', 
+   sendEmail(newUser.email, 'Welcome to FreshGo', 
         "Welcome to FreshGo! Your account has been created successfully. Start exploring fresh groceries today. – The FreshGo Team"
     )
+    .catch(err => console.log(err)) //silently catch the error (reason: req/res cycle is ended at this point)
+
 })
 
 // sign-up controller
@@ -154,11 +155,12 @@ export const validateForSignUp = controllerWrapper(async (req, res, next) => {
     }, 300)
 
     // OTP successfully sent
-    res.status(201).json({
-        status: 'success',
+    sendApiResponse(res, 201, {
         message: 'OTP sent to your email',
-        email: body.email //attach email so the frontend can reuse it in the sign-up flow
-})
+        data: {
+            email: body.email //attach email so the frontend can reuse it in the sign-up flow
+        } 
+    })
 })
 
 // login controller
@@ -209,12 +211,10 @@ export const login = controllerWrapper(async (req, res, next) => {
     user.password = undefined
 
     //logged in successfully, send response
-    res.status(201).json({
-        status: 'success',
-        data: {
-            user
-        }
-    });
+    sendApiResponse(res, 200, {
+        message: 'Logged in successfully',
+        data: user,
+    })
 
 })
 
@@ -225,11 +225,9 @@ export const logout = controllerWrapper(async (req, res, next) => {
     res.clearCookie('RT', { httpOnly: true, sameSite: 'strict'})
 
     // user logged out successfully
-    res.status(201).json({
-        status: 'success',
+    sendApiResponse(res, 201, {
         message: 'Logged out successfully'
     })
-
 })
 
 export const changePassword = controllerWrapper(async (req, res, next) => {
@@ -267,17 +265,15 @@ export const changePassword = controllerWrapper(async (req, res, next) => {
     user.password = undefined; // remove password from the response
 
     // change password successfully
-    res.status(200).json({
-        status: 'success',
+
+    sendApiResponse(res, 201, {
         message: 'Password changed successfully',
-        data: {
-            user
-        }
-    });
+        data: user
+    })
 })
 
 // request OTP to change the password
-export const resetPassword = async (req, res, next) => {
+export const resetPassword = controllerWrapper(async (req, res, next) => {
 
     // get email from body
     const {email} = req.body || {}
@@ -314,12 +310,12 @@ export const resetPassword = async (req, res, next) => {
     }, 300)
 
     // OTP successfully sent
-    res.status(201).json({
-        status: 'success',
-        message: 'OTP sent to your email',
-        email //attach email so the frontend can reuse it in the sign-up flow
+sendApiResponse(res, 201, {
+    message: 'OTP sent to your email', 
+    data: {email} //attach email so the frontend can reuse it in the sign-up flow
+
 })
-}
+})
 
 // verifies the OTP and change password
 export const verifyPasswordResetOTP = controllerWrapper(async (req, res, next) => {
@@ -361,9 +357,12 @@ export const verifyPasswordResetOTP = controllerWrapper(async (req, res, next) =
     // storing token for changing the password (allows user to change the password)
     await tokenStore.setShortLivedData(token, 300)
     
-
+    
     // user is now allowed to modify their password
-    res.status(201).json({message: 'OTP was correct', email})
+    sendApiResponse(res, 201, {
+        message: 'Verification successful, Please enter a new password',
+        data: {email}
+    })
 })
 
 // resets password using a valid password reset token
@@ -411,12 +410,10 @@ export const submitNewPassword = controllerWrapper(async (req, res, next) => {
     // delete token from Redis
     await tokenStore.deleteData(TOKEN_KEY)
 
-    // password changed 
-    res.status(200).json({
-        status: 'success',
+    // password changed successfully
+    sendApiResponse(res, 201, {
         message: 'Password changed successfully'
     })
-
 })
 
 export const requestEmailChange = async (req, res, next) => {
@@ -458,7 +455,10 @@ export const requestEmailChange = async (req, res, next) => {
     // Send OTP to new email
     await sendEmail(newEmail, 'Change email', `Use this OTP to change email: ${OTP}`);
 
-    res.status(200).json({ message: "OTP sent to new email for verification" });
+    // OTP sent
+    sendApiResponse(res, 201, {
+        message: 'OTP sent to your new email', 
+    })
 }
 
 
@@ -501,11 +501,11 @@ export const changeEmailWithOTP = controllerWrapper(async (req, res, next) => {
 
     // delete OTPData from Redis
     await otpStore.deleteData(OTP_KEY)
-    
-    res.status(201).json({
-        status: 'success', 
-        message: 'Email updated successfully', 
-        email: user.email
+
+    // email updated
+    sendApiResponse(res, 201, {
+        message: 'Email changed successfully', 
+        data: {email: user.email}
     })
 })
 
@@ -551,8 +551,10 @@ export const deleteMyAccount = controllerWrapper(async (req, res, next) => {
     res.clearCookie('AT', { httpOnly: true, sameSite: 'strict'})
     res.clearCookie('RT', { httpOnly: true, sameSite: 'strict'})
 
-        // user deleted successfully
-        res.status(204).send();
+
+        sendApiResponse(res, 200, {
+            message: 'Account deleted successfully'
+        })
     }
     catch (err) {
 
