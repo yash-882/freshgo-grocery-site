@@ -26,31 +26,40 @@ class RedisService {
     }
 
     // stores data with expiration time in Redis
-    async setShortLivedData(data, ttl){
-    const isObject = data !== null && typeof data === 'object' && !Array.isArray(data)
+    async setShortLivedData(data, ttl, isUpdate=false){
+    const isObject = data !== null && typeof data === 'object' 
 
     if(isObject){
         data = JSON.stringify(data)
     }
+
+    // XX (only set if already exists), NX (only set if doesn't exist)
+    const condition = isUpdate ? 'XX' : 'NX'
     
     // temporarily (ttl example: 300 -> 5 minutes) store data in Redis
-    await client.set(this.getKey(), data, {expiration:{type: 'EX', value: ttl}})
-    }
+    await client.set(this.getKey(), data, {
+        condition, 
+        expiration:{ type: 'EX', value: ttl }
+    })
+}
 
 
     // store data in Redis
-    async setData(data){
-        const isObject = data !== null && typeof data === 'object' && !Array.isArray(data)
+    async setData(data, isUpdate=false){
+        const isObject = data !== null && typeof data === 'object'
 
     if(isObject){
         data = JSON.stringify(data)
     }
 
+    // XX (only set if already exists), NX (only set if doesn't exist)
+    const condition = isUpdate ? 'XX' : 'NX'
+
     //  store data in Redis
-    await client.set(this.getKey(), data)
+    await client.set(this.getKey(), data, {condition})
     }
 
-    async isJSON(data){
+    isJSON(data){
         try{
         const parsed = JSON.parse(data)
 
