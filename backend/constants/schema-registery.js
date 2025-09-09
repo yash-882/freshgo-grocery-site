@@ -14,7 +14,7 @@ export const schemaRegistery = {
 
     // selectable fields
     selectableFields: schemaFieldHelpers
-    .getSelectableFields(ProductModel.schema.paths, ['seller', 'score'])
+    .getSelectableFields(ProductModel.schema.paths, ['score'])
   },
 
   // used by Admin only

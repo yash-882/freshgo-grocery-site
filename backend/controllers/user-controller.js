@@ -158,7 +158,7 @@ export const deleteUserByID = async (req, res, next) => {
 
 // delete multiple user by filter
 export const deleteUsers = async (req, res, next) => {
-    const {filter} = req.sanitizedQuery; // getting user id from params
+    const {filter, skip, limit} = req.sanitizedQuery; // getting user id from params
 
     let session;
     let deletionResult;
@@ -175,26 +175,33 @@ export const deleteUsers = async (req, res, next) => {
         // run transaction (mongoDB commits or aborts the transaction automatically)
         await session.withTransaction(async () => {
 
-            // find users for deletion
-            const usersToDelete = await UserModel.find(filter).session(session)
-
-            // users not found
-            if (usersToDelete.length === 0) {
-
-                // throwing makes mongoDB to abort the transaction 
-                throw new CustomError('NotFoundError', `No users found for deletion`, 404)
-            }
-
-            // get IDs of all found users
-            const usersIDs = usersToDelete.map(user => user._id)
-
-
-            // deleting products of users...
-            await ProductModel.deleteMany({seller: {$in: usersIDs}}).session(session)
-
-            // deleting users...
-            deletionResult = await UserModel.deleteMany({_id: {$in: usersIDs}}).session(session)
-
+            // users to delete
+              const usersToDelete = await UserModel.find(filter)
+              .skip(skip)
+              .limit(limit)
+              .session(session);
+            
+              // no products found
+              if (usersToDelete.length === 0) {
+                 // throwing makes mongoDB to abort the transaction 
+                  throw new CustomError('NotFoundError', `No users found for deletion`, 404)
+              }
+            
+              // get IDs of all found users
+              const usersIDs = usersToDelete.map(user => user._id)
+              
+              // deleting products of users...
+              await ProductModel.deleteMany({seller: {$in: usersIDs}}).session(session)
+              
+              // creating array of filters(includes user ID), per user
+              const operations = usersToDelete.map(user => ({
+                deleteOne: {
+                  filter: { _id: user._id }, 
+                }
+              }))
+            
+              // deleting users in bulk
+              deletionResult = await UserModel.bulkWrite(operations, {session});
         })
 
 

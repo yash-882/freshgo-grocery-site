@@ -13,6 +13,7 @@ import { authorizeUser, roleBasedAccess } from '../middlewares/auth-middleware.j
 import { adminDeleteProductByID, adminDeleteProducts, adminUpdateProductByID, adminUpdateProducts, getProductByID, getProducts, updateMyProductByID } from '../controllers/product-controller.js';
 import { handleQuery } from '../middlewares/query-middleware.js';
 import { schemaRegistery } from '../constants/schema-registery.js';
+import { checkCachedData } from '../middlewares/cache-middleware.js';
 
 const adminRouter = Router();
 
@@ -31,15 +32,17 @@ adminRouter.route('/user-access/:id')
     .patch(updateUserByID)
     .delete(deleteUserByID )
 
+
+
 // operations for multiple products
 adminRouter.route('/product-access')
-.get(handleQuery(schemaRegistery.product, true), getProducts)
+.get(handleQuery(schemaRegistery.product, true), checkCachedData('product', true), getProducts)
 .patch(handleQuery(schemaRegistery.product, true), adminUpdateProducts)
 .delete(handleQuery(schemaRegistery.product, true), adminDeleteProducts)
 
 // operations for a single product
 adminRouter.route('/product-access/:id')
-    .get(getProductByID)
+    .get(checkCachedData('product', true), getProductByID)
     .patch(adminUpdateProductByID)
     .delete(adminDeleteProductByID )
 

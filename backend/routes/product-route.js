@@ -10,6 +10,7 @@ import {
 import { authorizeUser, roleBasedAccess } from '../middlewares/auth-middleware.js'
 import { schemaRegistery  } from '../constants/schema-registery.js';
 import { handleQuery } from '../middlewares/query-middleware.js';
+import { checkCachedData } from '../middlewares/cache-middleware.js';
 const productRouter = Router();
 
 // product router
@@ -19,12 +20,17 @@ const productRouter = Router();
             authorizeUser, 
             roleBasedAccess('seller'),
             handleQuery(schemaRegistery.product), 
+            checkCachedData('product', true), 
             getMyProducts
         )
 
         // public routes
-        productRouter.get('/', handleQuery(schemaRegistery.product), getProducts)
-        productRouter.get('/:id', getProductByID)
+        productRouter.get('/',
+            handleQuery(schemaRegistery.product),
+            checkCachedData('product', false), 
+            getProducts)
+        // public route
+        productRouter.get('/:id', checkCachedData('product', false),  getProductByID)
 
 
         // protect seller-only routes
