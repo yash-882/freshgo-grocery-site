@@ -52,11 +52,11 @@ export const signUp = controllerWrapper(async (req, res, next) => {
     const tokens = {
         AT: signAccessToken({
             id: newUser._id, 
-            role: newUser.role
+            roles: newUser.roles
         }),
         RT: signRefreshToken({
             id: newUser._id, 
-            role: newUser.role
+            roles: newUser.roles
         }),
 
     // parseInt stops parsing when 'd'(stands for days) is triggered,
@@ -132,7 +132,7 @@ export const validateForSignUp = controllerWrapper(async (req, res, next) => {
     // create a new mongoose document (not saved)
     const newUser = new UserModel({
         ...body, 
-        role: ['user'] //force role to 'user'
+        roles: ['user'] //force role to 'user'
     })
 
     // validate user fields, throws error if any field is invalid
@@ -181,11 +181,11 @@ export const login = controllerWrapper(async (req, res, next) => {
     const tokens = {
         AT: signAccessToken({
             id: user._id, 
-            role: user.role
+            roles: user.roles
         }),
         RT: signRefreshToken({
             id: user._id, 
-            role: user.role
+            roles: user.roles
         }),
 
     // parseInt stops parsing when 'd'(stands for days) is triggered,
@@ -541,7 +541,7 @@ export const deleteMyAccount = controllerWrapper(async (req, res, next) => {
             }
 
             // only delete products if the user is 'Seller'
-            if(user.role.includes('seller')){
+            if(user.roles.includes('seller')){
                 await ProductModel.deleteMany({seller: user._id}).session(session)
             }
 

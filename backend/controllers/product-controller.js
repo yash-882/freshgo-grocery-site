@@ -82,7 +82,7 @@ export const getProducts = controllerWrapper(async (req, res, next) => {
 
   //get unique ID ('<hash-of-query-string>')
 
-  if(req.user?.role.includes('admin'))
+  if(req.user?.roles.includes('admin'))
   uniqueID = cacheKeyBuilders.pvtResources(req.user.id, req.sanitizedQuery);
 
   else 
@@ -146,7 +146,7 @@ export const getProductByID = controllerWrapper(async (req, res, next) => {
 
   let uniqueID;
 
-  if(req.user?.role.includes('admin'))
+  if(req.user?.roles.includes('admin'))
   uniqueID = cacheKeyBuilders.pvtResources(req.user.id, productID);
 
   else 

@@ -55,13 +55,13 @@ export const updateUserByID = controllerWrapper(async (req, res, next) => {
     const updates = req.body 
    
 
-    if(updates.role){
+    if(updates.roles){
         // mongodb operator for pushing an element in array field 
         // (only inserts if the element doesn't exist in array)
-        updates.$addToSet = {role: updates.role }
+        updates.$addToSet = {roles: updates.roles }
 
-        // delete role
-        delete updates.role
+        // delete roles
+        delete updates.roles
     }
 
     // updating user...
@@ -131,7 +131,7 @@ export const deleteUserByID = async (req, res, next) => {
             }
 
             // only delete products if the user is 'Seller'
-            if(user.role.includes('seller')){
+            if(user.roles.includes('seller')){
 
                 await ProductModel.deleteMany({seller: user._id}).session(session)
             }
@@ -237,28 +237,28 @@ export const updateMyProfile = controllerWrapper(async (req, res, next) => {
         email: undefined,
     }
     
-    if(updates.role){
+    if(updates.roles){
 
         // don't allow a user/seller to change their role to 'admin'
-        if(updates.role === 'admin')
+        if(updates.roles === 'admin')
             return next(
-        new CustomError('BadRequestError', 'You cannot change your role to admin!', 400))
+        new CustomError('BadRequestError', 'You cannot change your roles to admin!', 400))
 
         // user already has the role they are requesting
-        else if(req.user.role.includes(updates.role)){
+        else if(req.user.roles.includes(updates.roles)){
              return next(
-        new CustomError('BadRequestError', `You already have the role: ${updates.role}`, 400))
+        new CustomError('BadRequestError', `You already have the roles: ${updates.roles}`, 400))
 
         }
 
         else{
             // mongodb operator for pushing an element in array field 
             // (only inserts if the element doesn't exist in array)
-            updates.$addToSet = {role: updates.role }
+            updates.$addToSet = {roles: updates.roles }
         }
 
-        // delete role
-        delete updates.role
+        // delete roles
+        delete updates.roles
     }
 
     // updating user...

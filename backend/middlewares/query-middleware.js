@@ -28,7 +28,7 @@ export const handleQuery = (schemaFields, isAdmin = false) => {
         operation.createFilter()        //create stuctured filter that MongoDB supports
         operation.createSortFields()    //apply sort fields (if available)
 
-        // restrict sensitive field selection to non-admin role
+        // restrict sensitive field selection to non-admin roles
         operation.createSelectFields(isAdmin) //apply select fields (if available)
 
         // sanitized query

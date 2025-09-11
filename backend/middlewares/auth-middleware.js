@@ -19,18 +19,18 @@ export const verifyPassword = controllerWrapper(async (req, res, next) => {
     next()
 })
 
-// allow requests to protected routes based on role
+// allow requests to protected routes based on roles
 // returns an async handler for express
 export const roleBasedAccess = (role) => {
     return (req, res, next) => {
         const user = req.user; //get user 
     
         // invalid role
-        if(!user.role.includes(role)){
+        if(!user.roles.includes(role)){
             return next(new CustomError('ForbiddenError', 'Not allowed to this route!', 403))
         }
     
-        // valid role for this request
+        // valid roles for this request
         next()
     }
 }
@@ -128,7 +128,7 @@ export const authorizeUser = controllerWrapper(async (req, res, next) => {
     user = await findUserByQuery({_id: decoded.id}, true, 'Account may have been deleted!');
 
     // sign new access token
-    const newToken = signAccessToken({id: user._id, role: user.role})
+    const newToken = signAccessToken({id: user._id, roles: user.roles})
     
     // parseInt stops parsing when 'd'(stands for days) is triggered,
     // and returns numbers of days in Number datatype
