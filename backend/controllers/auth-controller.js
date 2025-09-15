@@ -10,6 +10,7 @@ import RedisService from "../utils/redis-service.js";
 import mongoose from "mongoose";
 import ProductModel from "../models/product-model.js";
 import sendApiResponse from "../utils/api-response.js";
+import CartModel from "../models/cart-model.js";
 
 // signup user after OTP validation
 export const signUp = controllerWrapper(async (req, res, next) => {
@@ -545,6 +546,8 @@ export const deleteMyAccount = controllerWrapper(async (req, res, next) => {
                 await ProductModel.deleteMany({seller: user._id}).session(session)
             }
 
+            // delete user's cart
+            await CartModel.findOneAndDelete({user: userID}).session(session)
         })
 
     // clear all tokens

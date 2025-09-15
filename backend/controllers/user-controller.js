@@ -7,6 +7,7 @@ import { findUserByQuery } from "../utils/auth-helpers.js";
 import mongoose from "mongoose";
 import ProductModel from "../models/product-model.js";
 import sendApiResponse from "../utils/api-response.js";
+import CartModel from "../models/cart-model.js";
 
 // -------------------------------------------
 // Only role with 'admin' can access the handlers below
@@ -192,16 +193,12 @@ export const deleteUsers = async (req, res, next) => {
               
               // deleting products of users...
               await ProductModel.deleteMany({seller: {$in: usersIDs}}).session(session)
-              
-              // creating array of filters(includes user ID), per user
-              const operations = usersToDelete.map(user => ({
-                deleteOne: {
-                  filter: { _id: user._id }, 
-                }
-              }))
+
+            //   deleting users cart
+              await CartModel.deleteMany({user: {$in: usersIDs}}).session(session)
             
               // deleting users in bulk
-              deletionResult = await UserModel.bulkWrite(operations, {session});
+              deletionResult = await UserModel.deleteMany({ _id: { $in: usersIDs }}).session(session);
         })
 
 
