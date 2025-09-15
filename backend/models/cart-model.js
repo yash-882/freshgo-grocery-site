@@ -13,6 +13,7 @@ const CartSchema = new Schema({
                 type: Number,
                 required: true,
                 min: [1, 'Quantity must be greater than 0'],
+                default: 1
 
             },
             addedAt: {

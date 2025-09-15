@@ -13,6 +13,7 @@ import adminRouter from './routes/admin-route.js';
 import userRouter from './routes/user-route.js';
 import productRouter from './routes/product-route.js';
 import qs from 'qs';
+import cartRouter from './routes/cart-route.js';
 
 // parses query strings ("?price[gt]=20&sort=-price" -> {price: {gt: "20"}, sort="-price"})
 app.set("query parser", (query)=> {
@@ -36,6 +37,9 @@ app.use('/api/user', userRouter)
 
 // product router (accessible by all roles (user, seller, admin, unauthenticated user))
 app.use('/api/product', productRouter)
+
+// cart router(accessible to authenticated users only)
+app.use('/api/cart', cartRouter)
 
 // global error handler middleware
 app.use(GlobalErrorHandler)
