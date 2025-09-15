@@ -134,46 +134,77 @@ class QueryOperations {
 
     //Convert sort string to MongoDB-compatible format
     createSortFields() {
-        if (this.sortBy) {
-            const fields = this.sortBy.split(",");
-            const sortSet = new Set(fields);
+        if (!this.sortBy) return;
 
+            const fields = this.sortBy.split(",");
+            
+            // extract valid fields
+            const validFields = [...new Set(fields)].filter(f => {
+                const fieldName = f.startsWith('-') ? f.slice(1) : f;
+                return this.schemaFields.allFields.has(fieldName);
+            });
+            
+            const sortSet = new Set(validFields);
+            
             // ensure -createdAt fallback
             if (![...sortSet].some((f) => f.includes("createdAt"))) {
                 sortSet.add("-createdAt");
             }
-
-            this.sortBy = [...sortSet].join(" ");
-        }
-    }
-     createSelectFields(isAdmin) {
-        const selectParams = this.select;
-
-        
-        if(selectParams){
-            let selectedFields;
             
-            if (isAdmin) {
-                // convert comma-separated string to array
-                selectedFields = selectParams.split(',')
-                .filter(f => this.schemaFields.allFields.has(f));
-            } else {
-                // if not provided, use selectable fields
-                    selectedFields = selectParams.split(',')
-                .filter(f => this.schemaFields.selectableFields.has(f));
-            }
+            // create sorting fields for mongoose .sort() method
+            //e.g: '-price', 'createdAt' -> {price: -1, createdAt: 1}
 
-            selectedFields.join(' ')
+            let sortParams = {};
+              [...sortSet].forEach(f => {
+                if (f.startsWith('-')) sortParams[f.slice(1)] = -1; //remove prefix '-' and insert
+                else sortParams[f] = 1;
+            });
 
-            // build string for Mongoose .select()
-            this.select = selectedFields.join(' ');
-    
+
+            this.sortBy = sortParams;
+
             // remove fields param from query
-            delete this.query.select;
-        }
-
+            delete this.query.sort; 
+        
     }
+createSelectFields(isAdmin) {
+    if (!this.select) return;
 
+    const fields = this.select.split(',')
+    
+    // allow specific field access based on role
+    const allowedFields = isAdmin
+        ? this.schemaFields.allFields
+        : this.schemaFields.selectableFields;
+
+    // extract valid fields 
+    const selectedFields = [...new Set(fields)].filter(f => {
+       return f.startsWith('-') ? allowedFields.has(f.slice(1)) : allowedFields.has(f);
+    })
+
+    // build object for Mongoose .select({ field1: 1, field2: 1 })
+    let selectParams = {};
+    let isExclusion = selectedFields[0].startsWith('-');
+
+    //becomes true when both inclusion and exclusion(-) fields are mixed together 
+    let conflict = false 
+
+    selectedFields.forEach(f => {
+        //inclusion and exclusion are mixed!
+        if(isExclusion && !f.startsWith('-') || (!isExclusion && f.startsWith('-'))){
+             conflict = true 
+        } 
+        else{
+            // apply inclusion or exclusion
+            f.startsWith('-') ? selectParams[f.slice(1)] = 0 : selectParams[f] = 1;
+        }
+    })
+
+    this.select = conflict ? {} : selectParams;
+
+    // remove fields param from query
+    delete this.query.select;
+}
 }
 
 export default QueryOperations;
