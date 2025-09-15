@@ -5,23 +5,19 @@ import CustomError from '../error-handling/custom-error-class.js';
 import controllerWrapper from '../utils/controller-wrapper.js';
 import sendApiResponse from '../utils/api-response.js';
 import ProductModel from '../models/product-model.js';
+import { populateCart, validateStock } from '../utils/cart-helpers.js';
 
 // get user's cart
 export const getCart = controllerWrapper(async (req, res, next) => {
     const userID = req.user.id;
 
+    // get current user's cart with products
+    let cart = await populateCart(userID);
 
-    // get current user's cart
-    let cart = await CartModel.findOne({ user: userID }).populate({
-        //a field of item of products field(array) in Cart schema that stores product ID
-        path: 'products.product',
-        model: 'product', // name of the referenced model
-        select: 'name price description quantity images inStock'
-    })
-
+    // cart not found
     if (!cart) {
         cart = new CartModel({ user: userID, products: [] });
-        await cart.save()
+        await cart.save() //create new cart for user
     }
 
     let shouldSave = false;
@@ -76,23 +72,18 @@ export const addToCart = controllerWrapper(async (req, res, next) => {
     .findIndex(item => item.product.toString() === productID);;
     
     if (itemIndex !== -1) {
+        const totalQuantity = cart.products[itemIndex].quantity + quantity;
+        //throws error if requestedQuantity exceeds available product quantity
+      validateStock( product, totalQuantity)
 
-          //more quantity is exceeding stock quantity
-          if(product.quantity < quantity + cart.products[itemIndex].quantity) 
-            return next(new CustomError(
-        'BadRequestError', `Only ${product.quantity} units are available in stock!` , 400));
-            
-
-        // add up more quantity to existing product
+        // add up more quantity to the existing product
         cart.products[itemIndex].quantity += quantity;
     }
 
     else{
 
-        if(product.inStock === false || product.quantity === 0) 
-        return next(new CustomError(
-            'BadRequestError', `Product is out of stock!`, 400));
-            
+    //throws error if requestedQuantity exceeds available product quantity
+    validateStock( product, quantity)
 
     // add new product to cart
     cart.products.push({ product: productID, quantity });
@@ -105,7 +96,6 @@ export const addToCart = controllerWrapper(async (req, res, next) => {
         message: 'Added to cart successfully',
     });
 });
-
 // clear cart   
 export const clearCart = controllerWrapper(async (req, res, next) => {
     const userID = req.user.id;
@@ -176,10 +166,6 @@ export const updateCartItemQuantity = controllerWrapper(async (req, res, next) =
     const product = await ProductModel.findById(productID);
     if (!product)
         return next(new CustomError('NotFoundError', 'Product not found!', 404));
-
-    // product is out of stock
-    if (!product.inStock || product.quantity === 0)
-        return next(new CustomError('BadRequestError', 'Product is out of stock!', 400));
 
     // first query: increment/decrement the quantity
     const updatedCart = await CartModel.findOneAndUpdate(
