@@ -5,7 +5,7 @@ import CustomError from '../error-handling/custom-error-class.js';
 import controllerWrapper from '../utils/controller-wrapper.js';
 import sendApiResponse from '../utils/api-response.js';
 import ProductModel from '../models/product-model.js';
-import { populateCart, validateStock } from '../utils/cart-helpers.js';
+import { getCartSummary, populateCart, validateStock } from '../utils/cart-helpers.js';
 
 // get user's cart
 export const getCart = controllerWrapper(async (req, res, next) => {
@@ -36,9 +36,9 @@ export const getCart = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         data: {
             cart,
-            cartSummary: cart?.getSummary(cart.products)
+            cartSummary: getCartSummary(cart?.products)
         },
-        message: cart.products.length === 0 ? 'Cart is empty' : undefined,
+        message: cart.products.length === 0 ? "No items in your cart yet" : undefined,
 
     });
 });
