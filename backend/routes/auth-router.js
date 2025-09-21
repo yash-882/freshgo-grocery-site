@@ -12,7 +12,8 @@ import {
     submitNewPassword,
     changeEmailWithOTP,
     requestEmailChange,
-    deleteMyAccount, } from '../controllers/auth-controller.js';
+    deleteMyAccount,
+    googleAuthCallback, } from '../controllers/auth-controller.js';
 import {authRequiredFields} from '../constants/required-fields.js';
 
 // middlewares
@@ -20,8 +21,16 @@ import {
     authorizeUser, 
     checkRequiredFields, 
     verifyPassword } from '../middlewares/auth-middleware.js';
-
-
+    import passport from 'passport';
+    
+// entry point of google authentication 
+authRouter.route('/google')
+.get(passport.authenticate('google', {scope: ['profile', 'email']}))
+ 
+// handles success or failure, executes after google verifies the user and client(App)
+authRouter.route('/google/callback')
+.get(googleAuthCallback)
+    
 //request OTP for reset password 
 authRouter.route('/reset-password')
 .post(checkRequiredFields(authRequiredFields.resetPassword), resetPassword)
@@ -38,6 +47,7 @@ authRouter.route('/reset-password/submit')
 // middleware to authorize user and allow access to protected routes
 // additionally, it avoids login/signup requests if user is already logged in
 authRouter.use(authorizeUser)
+
 
 // validates user fields for sign-up and sends OTP for further verification 
 authRouter.route('/sign-up-validation')

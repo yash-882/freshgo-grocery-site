@@ -11,6 +11,8 @@ import mongoose from "mongoose";
 import ProductModel from "../models/product-model.js";
 import sendApiResponse from "../utils/api-response.js";
 import CartModel from "../models/cart-model.js";
+import passport from "passport";
+import { readSync } from "fs";
 
 // signup user after OTP validation
 export const signUp = controllerWrapper(async (req, res, next) => {
@@ -171,6 +173,14 @@ export const login = controllerWrapper(async (req, res, next) => {
    // check if user exists in DB with the given email
     const user = await findUserByQuery({email}, true, 'Email is not registered with us!');
 
+    if (user.auth.length === 1 && user.auth.includes('google')) {
+        return next(new CustomError
+            ('ForbiddenError',
+                'This account is linked with Google. Please login using your Google account.',
+                403
+            ))
+    }
+
     // validate password, throws custom error if incorrect
     await bcryptCompare({
         plain: password, 
@@ -235,6 +245,14 @@ export const changePassword = controllerWrapper(async (req, res, next) => {
     const {currentPassword, newPassword, confirmNewPassword} = req.body;
 
     const user = req.user; // get user from request object
+
+    if (user.auth.length === 1 && user.auth.includes('google')) {
+        return next(new CustomError
+            ('ForbiddenError',
+                'This account is linked to Google. To set a password, please verify via OTP.',
+                403
+            ))
+    }
 
     // if new password is not confirmed correctly
     if(newPassword !== confirmNewPassword) {
@@ -569,4 +587,62 @@ export const deleteMyAccount = controllerWrapper(async (req, res, next) => {
         if (session)
             session.endSession() // end transaction session
     }
+})
+
+// google OAUTH2 callback (the user is redirected to this callback
+// after clicking 'Allow access', then passport handles the auth flow)
+export const googleAuthCallback = controllerWrapper((req, res, next) => {
+     passport.authenticate('google', { session: false }, (err, user, info) => {
+
+        // (db error, passport error, unauthorized error)
+        if(err)
+            return next(err)
+
+        // user denied the permission
+        if(!user){
+            return next(
+                new CustomError('UnauthorizedError', 'Google authentication failed!', 401))
+        }
+     
+    // auth successful:
+
+    // tokens properties AT = Access Token, RT = Refresh Token
+    const tokens = {
+        AT: signAccessToken({
+            id: user._id, 
+            roles: user.roles
+        }),
+        RT: signRefreshToken({
+            id: user._id, 
+            roles: user.roles
+        }),
+
+    // parseInt stops parsing when 'd'(stands for days) is triggered,
+    // and returns numbers of days in Number datatype
+        AT_AGE: parseInt(process.env.ACCESS_TOKEN_EXPIRES_IN), //in minutes
+        RT_AGE: parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN) //in days
+    } 
+
+    // store tokens in the browser cookies
+    res.cookie('AT', tokens.AT, {
+        httpOnly: true,
+        sameSite: 'strict',
+        expires: new Date(Date.now() + tokens.AT_AGE * 60 * 1000), // minutes 
+    });
+
+    res.cookie('RT', tokens.RT, {
+        httpOnly: true,
+        sameSite: 'strict',
+        expires: new Date(Date.now() + tokens.RT_AGE * 24 * 60 * 60 * 1000), // days
+    });
+    
+    user.password = undefined; //remove password before responding
+
+    // sucessful logged in via google account
+        sendApiResponse(res, 200, {
+            message: 'Logged in successfully',
+            data: user,
+        })
+
+     })(req, res, next)
 })

@@ -11,6 +11,15 @@ export const verifyPassword = controllerWrapper(async (req, res, next) => {
     const {password} = req.body
     const user = req.user
 
+    // user has never used a local/password login
+    if(user.auth.length === 1 && user.auth.includes('google')){
+        return next(new CustomError
+            ('ForbiddenError',
+                'This account is linked with Google. To set a password, please verify via OTP.',
+                403
+            ))
+    }
+
     // throws custom error for password 
     await bcryptCompare({plain: password, hashed: user.password}, 'Incorrect password!')
 
