@@ -39,6 +39,13 @@ const UserSchema = new Schema({
         default: ['user'], // default role is 'user'
         lowercase: true
     },
+    auth: {
+        type: [String],
+        enum: {
+            values: ['google', 'local'],
+            message: "'{VALUE}'' is not a valid authentication method!"
+        }
+    },
     createdAt: {
         type: Date,
         default: Date.now,
