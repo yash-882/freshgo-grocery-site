@@ -5,14 +5,17 @@ import QueryOperations from "../utils/query-operations.js"
 export const handleQuery = (schemaFields, isAdmin = false) => {
 
     return (req, res, next) => {
+        const queryParamsLength = Object.keys(req.query).length
+        const isSearchQuery = req.path === '/search' && queryParamsLength === 1 && req.query.value
 
-        // skip processing if no query params are provided
-        if(Object.keys(req.query).length === 0){
+        // skip processing if no query params are provided or for search requests
+        if(queryParamsLength === 0 || isSearchQuery){
 
             // default query
             req.sanitizedQuery = {
+            value: isSearchQuery ? req.query.value : undefined,
             filter: {}, //actual filter {}
-            sort: '-createdAt', //default
+            sort: { score: -1, inStock: -1}, //default
             limit: 10,  //default
             skip: null, //number or null
             select: null //string or null

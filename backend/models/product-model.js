@@ -96,8 +96,12 @@ const ProductSchema = new Schema({
 // category + Price (filter & sort by price)
 ProductSchema.index({ category: 1, price: 1 });
 
-// category + Name (search within category)
-ProductSchema.index({ category: 1, name: 1 });
+// product searching 
+ProductSchema.index({
+    name: "text",
+    tags: "text",
+    category: "text"
+})
 
 
 const ProductModel = model('product', ProductSchema);

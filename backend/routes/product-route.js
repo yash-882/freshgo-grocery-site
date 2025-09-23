@@ -6,13 +6,15 @@ import {
     getMyProducts, 
     getProductByID, 
     getProducts, 
+    searchProducts, 
     updateMyProductByID } from '../controllers/product-controller.js';
-import { authorizeUser, roleBasedAccess } from '../middlewares/auth-middleware.js'
-import { schemaRegistery  } from '../constants/schema-registery.js';
-import { handleQuery } from '../middlewares/query-middleware.js';
-import { checkCachedData } from '../middlewares/cache-middleware.js';
-const productRouter = Router();
+    import { authorizeUser, roleBasedAccess } from '../middlewares/auth-middleware.js'
+    import { schemaRegistery  } from '../constants/schema-registery.js';
+    import { handleQuery } from '../middlewares/query-middleware.js';
+    import { checkCachedData } from '../middlewares/cache-middleware.js';
 
+    const productRouter = Router();
+    
 // product router
 
         //get my product: seller-only-route (mounted first to prevent /:id route conflict)
@@ -24,12 +26,19 @@ const productRouter = Router();
             getMyProducts
         )
 
-        // public routes
+        // search products: public route
+        productRouter.get('/search',
+            handleQuery(schemaRegistery.product),
+            checkCachedData('product', false), 
+            searchProducts)
+
+        // get products: public route
         productRouter.get('/',
             handleQuery(schemaRegistery.product),
             checkCachedData('product', false), 
             getProducts)
-        // public route
+
+        // get product by ID: pubic route
         productRouter.get('/:id', checkCachedData('product', false),  getProductByID)
 
 

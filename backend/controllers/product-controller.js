@@ -7,6 +7,30 @@ import sendApiResponse from '../utils/api-response.js';
 import { deleteCachedData, storeCachedData } from '../utils/cache-helpers.js';
 import cacheKeyBuilders  from '../constants/cache-key-builders.js';
 
+// search products 
+export const searchProducts = controllerWrapper(async (req, res, next) => {
+    const {value, skip, limit, sort } = req.sanitizedQuery;
+
+    // search value is required
+    if(!value){
+      return next(new CustomError('BadRequestError', 'Search value is required', 400))
+    }
+
+    // search products based on the query
+    const searchedProducts = await ProductModel.find({$text: {$search: value}})
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
+
+    const uniqueID = cacheKeyBuilders.publicResources(req.sanitizedQuery);
+  // store products in cache(Redis)
+    await storeCachedData(uniqueID, {data: searchedProducts}, 'product')
+    sendApiResponse(res, 200, {
+      data: searchedProducts,
+   
+  })
+})
+
 // create new product (accessible roles: Seller only)
 export const createProduct = controllerWrapper(async (req, res, next) => {
 
