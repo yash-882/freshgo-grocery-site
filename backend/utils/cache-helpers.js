@@ -3,15 +3,19 @@ import RedisService from "./redis-service.js";
 import { createHash } from "crypto";
 
 // build a unique cache identifier for queries (e.g: sort=price&price[gt]=50)
-export const generateQueryHash = (query = {}) => {
-  const filter = { ...(query.filter || {}) };
+export const generateQueryHash = (query = {}) => { 
+  const filter = { 
+    ...query.filter || {}
+  }
+
   const { sort, limit, skip, select } = query;
 
   // merge properties
   Object.assign(filter, { sort, limit, skip, select });
 
 // sort keys to prevent cache misses due to different key ordering
-  const sortedFilter = sortObjectKeys(filter);
+// (skip sorting keys for search resource requests)
+  const sortedFilter = query.value ? query : sortObjectKeys(filter);
 
    // generate hash for query string (reason: query strings can be too lengthy as a Redis key)
   return createHash("md5").update(JSON.stringify(sortedFilter)).digest("hex");
