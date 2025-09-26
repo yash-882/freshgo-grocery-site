@@ -102,6 +102,7 @@ const UserSchema = new Schema({
     createdAt: {
         type: Date,
         default: Date.now,
+        immutable: true,
     },
 })
 
@@ -114,6 +115,43 @@ UserSchema.pre('save', async function(next) {
     }
     
     next()
+})
+
+// runs before updating the document(s)
+UserSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], 
+    async function(next) {
+    const updates = this.getUpdate(); //changes for updation
+
+    // prevents direct updates to sensitive fields
+    delete updates.password;
+    delete updates.email;
+    delete updates.auth
+
+    // allow a single value as a role for updation
+    // new role will be pushed manually in roles[] using $addToSet(prevents duplicates)
+
+    // role updation
+     if(updates.role){
+            // don't allow a user/seller to change their role to 'admin'
+            if(updates.role === 'admin' && !updates.byAdmin)
+                return next(
+            new CustomError('BadRequestError', 'You cannot change your role to admin!', 400))
+    
+            else{
+                // set MongoDB operator 
+             if(!updates.$addToSet)
+                updates.$addToSet = {};
+
+             // push new role
+                updates.$addToSet.roles = updates.role;
+            }
+    
+        // delete custom fields
+        delete updates.role;
+        delete updates.byAdmin;
+        }
+
+    next()   
 })
 
 // Create a model for the User schema

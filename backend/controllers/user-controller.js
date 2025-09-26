@@ -54,12 +54,14 @@ export const updateUserByID = controllerWrapper(async (req, res, next) => {
     const userID = req.params.id; // getting user id from params
 
     const updates = req.body 
-   
+
+    // set for pre schema hook
+    updates.byAdmin = true
 
     if(updates.roles){
         // mongodb operator for pushing an element in array field 
         // (only inserts if the element doesn't exist in array)
-        updates.$addToSet = {roles: updates.roles }
+        updates.$addToSet = {roles: updates.roles}
 
         // delete roles
         delete updates.roles
@@ -88,7 +90,9 @@ export const updateUsers = controllerWrapper(async (req, res, next) => {
     const {filter} = req.sanitizedQuery; // getting user id from params
 
     const updates = req.body; //changes for updation
-
+    
+    // set for pre schema hook
+    updates.byAdmin = true
 
     // updating users...
     const users = await UserModel.updateMany(filter, {$set: updates}, {
@@ -227,36 +231,10 @@ export const deleteUsers = async (req, res, next) => {
 // normal user: update own profile 
 export const updateMyProfile = controllerWrapper(async (req, res, next) => {
     const userID = req.user._id; //current user
-    const updates = {
-        ...req.body,
-        //ensures password and email cannot be updated directly
-        password: undefined, 
-        email: undefined,
-    }
-    
-    if(updates.roles){
+    const updates = req.body;
 
-        // don't allow a user/seller to change their role to 'admin'
-        if(updates.roles === 'admin')
-            return next(
-        new CustomError('BadRequestError', 'You cannot change your roles to admin!', 400))
-
-        // user already has the role they are requesting
-        else if(req.user.roles.includes(updates.roles)){
-             return next(
-        new CustomError('BadRequestError', `You already have the roles: ${updates.roles}`, 400))
-
-        }
-
-        else{
-            // mongodb operator for pushing an element in array field 
-            // (only inserts if the element doesn't exist in array)
-            updates.$addToSet = {roles: updates.roles }
-        }
-
-        // delete roles
-        delete updates.roles
-    }
+    // remove custom field(used in pre schema hook) if present
+    delete updates.byAdmin
 
     // updating user...
     const user = await UserModel.findByIdAndUpdate(userID, updates, {
