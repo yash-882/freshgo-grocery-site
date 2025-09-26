@@ -1,6 +1,47 @@
 import { Schema, model } from 'mongoose';
 import bcrypt from 'bcrypt';
 
+// address schema (only used as a field of UserSchema)
+const AddressSchema = new Schema({
+        label: {
+            type: String,
+            default: 'unlabeled address',
+            trim : true,
+            lowercase: true
+        },
+        pinCode: {
+            type: String,
+            required: [true, 'Pin code is required'],
+            trim: true,
+            validate: {
+                validator: (pinCode) => /^[0-9]{6}$/.test(pinCode),
+                message: () => 'Invalid pin code!'
+            }
+        },
+        street: {
+            type: String,
+            required: [true, 'Street is required'],
+            minlength: [2, 'Street must be at least 2 characters long'],
+            maxlength: [50, 'Street must be at most 50 characters long'],
+            trim: true,
+        },
+        city: {
+            type: String,
+            required: [true, 'City is required'],
+            minlength: [2, 'City must be at least 2 characters long'],
+            maxlength: [20, 'City must be at most 20 characters long'],
+            trim: true,
+        },
+        state: {
+            type: String,
+            required: [true, 'State is required'],
+            minlength: [2, 'State must be at least 2 characters long'],
+            maxlength: [20, 'State must be at most 20 characters long'],
+            trim: true,
+        },
+    })
+
+
 // USER SCHEMA
 const UserSchema = new Schema({
     
@@ -39,11 +80,23 @@ const UserSchema = new Schema({
         default: ['user'], // default role is 'user'
         lowercase: true
     },
+
+    addresses: {
+        type: [AddressSchema],
+        validate: {
+            validator: function (addresses){
+                return addresses.length <= 3
+            },
+            message: () => 'Cannot add more than 3 addresses' //max 3 addresses are allowd
+        },
+        default: []
+    },
+
     auth: {
         type: [String],
         enum: {
             values: ['google', 'local'],
-            message: "'{VALUE}'' is not a valid authentication method!"
+            message: "'{VALUE}' is not a valid authentication method!"
         }
     },
     createdAt: {
