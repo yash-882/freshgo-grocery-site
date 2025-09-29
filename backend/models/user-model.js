@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
 import bcrypt from 'bcrypt';
+import CustomError from '../error-handling/custom-error-class.js';
 
 // address schema (only used as a field of UserSchema)
 const AddressSchema = new Schema({
@@ -81,14 +82,9 @@ const UserSchema = new Schema({
         lowercase: true
     },
 
+    // Note: always use .save() method to run validators for updation
     addresses: {
         type: [AddressSchema],
-        validate: {
-            validator: function (addresses){
-                return addresses.length <= 3
-            },
-            message: () => 'Cannot add more than 3 addresses' //max 3 addresses are allowd
-        },
         default: []
     },
 
@@ -113,6 +109,12 @@ UserSchema.pre('save', async function(next) {
         // call hashPassword to hash the password
         this.password = await bcrypt.hash(this.password, 10)
     }
+
+    // max 3 addresses are allowed per user
+    if (this.addresses.length > 3) {
+        return next(
+            new CustomError('BadRequestError', 'Cannot add more than 3 addresses', 400))
+    }
     
     next()
 })
@@ -125,7 +127,11 @@ UserSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'],
     // prevents direct updates to sensitive fields
     delete updates.password;
     delete updates.email;
-    delete updates.auth
+    delete updates.auth;
+    delete updates.roles
+
+    // this field is only allowed for updation through .save()
+    delete updates.addresses;
 
     // allow a single value as a role for updation
     // new role will be pushed manually in roles[] using $addToSet(prevents duplicates)
