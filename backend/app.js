@@ -7,6 +7,7 @@ import productRouter from './routes/product-route.js';
 import cartRouter from './routes/cart-route.js';
 import adminRouter from './routes/admin-route.js';
 import userRouter from './routes/user-route.js';
+import orderRouter from './routes/order-route.js';
 
 // auth strategies
 import googleAuth from './auth-strategies/google-auth.js';
@@ -51,6 +52,9 @@ app.use('/api/product', productRouter)
 
 // cart router(accessible to authenticated users only)
 app.use('/api/cart', cartRouter)
+
+// order router (accessible to authenticated users only)
+app.use('/api/order', orderRouter)
 
 // global error handler middleware
 app.use(GlobalErrorHandler)

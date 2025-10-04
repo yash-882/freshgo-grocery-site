@@ -103,6 +103,17 @@ ProductSchema.index({
     category: "text"
 })
 
+// pre hook
+ProductSchema.pre('save', function (next) {
+
+    // update stock when no quantity available
+    if(this.quantity <= 0){
+        this.quantity = 0;
+        this.inStock = false;
+    }
+
+    next()
+})
 
 const ProductModel = model('product', ProductSchema);
 
