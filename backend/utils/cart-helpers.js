@@ -72,7 +72,6 @@ export const getCartSummary = (products=[]) => {
     return {
         totalItems: products.filter(item => item.product.inStock === true && item.product.quantity > 0).length,
         cartTotal: Number((cartSummary.cartTotal).toFixed(2)),
-        cartTotal: Number((cartSummary.cartTotal).toFixed(2)),
         deliveryCharges: cartSummary.deliveryCharges,
         grandTotal: Number((cartSummary.cartTotal + cartSummary.deliveryCharges).toFixed(2))
     }

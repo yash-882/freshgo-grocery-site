@@ -77,7 +77,7 @@ const OrderSchema = new Schema({
     paymentMethod: {
         type: String,
         enum: {
-            values: ['credit_card', 'upi', 'cash_on_delivery'],
+            values: ['credit_card', 'upi', 'cash_on_delivery', 'net_banking'],
             message: 'Invalid payment method!'
         },
         
@@ -87,6 +87,20 @@ const OrderSchema = new Schema({
         type: Date,
         default: Date.now
     }
+}, 
+{ 
+    toJSON: { virtuals: true }, toObject: { virtuals: true }
+})
+
+
+// sum of all products including their quantities 
+OrderSchema.virtual('totalItemsQuantity',).get(function(){
+    return this.products.reduce((totalItems, item) => totalItems + item.quantity, 0)
+})
+
+// unique product
+OrderSchema.virtual('totalItems').get(function() {
+    return this.products.length;
 })
 
 const OrderModel = model('order', OrderSchema)
