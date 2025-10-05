@@ -10,16 +10,17 @@ class QueryOperations {
     }
 
     // removes invalid fields that are not part of the schema or contain empty/falsy values
-    removeInvalidFields() {
+    removeInvalidFields(isAdmin) {
         Object.keys(this.query).forEach(field => {
             // check is the key is assigned with an empty value/array/obj/ or undefined
             const isEmptyStr = typeof this.query[field] === 'string' && this.query[field].trim() === '';
             const isEmptyObject = typeof this.query[field] === 'object' && this.query[field] !== null && Object.keys(this.query[field]).length === 0;
             const isEmptyArray = Array.isArray(this.query[field]) && this.query[field].length === 0;
             const isFalsy = this.query[field] === undefined || this.query[field] === null;
-            const isInvalidDBField = !this.schemaFields.allFields.has(field);
-
-
+            const isInvalidDBField = isAdmin ? 
+            !this.schemaFields.allFields.has(field) : 
+            !this.schemaFields.selectableFields.has(field);
+            
             // if the field contains falsy value
             if (isInvalidDBField || isEmptyStr || isEmptyObject || isEmptyArray || isFalsy)
                 delete this.query[field];

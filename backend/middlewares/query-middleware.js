@@ -27,7 +27,7 @@ export const handleQuery = (schemaFields, isAdmin = false) => {
 
         const operation = new QueryOperations(req.query, schemaFields)
 
-        operation.removeInvalidFields() //remove invalid fields
+        operation.removeInvalidFields(isAdmin) //remove invalid fields
         operation.createFilter()        //create stuctured filter that MongoDB supports
         operation.createSortFields()    //apply sort fields (if available)
 
