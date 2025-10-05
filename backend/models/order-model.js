@@ -61,7 +61,7 @@ const OrderSchema = new Schema({
     orderStatus: {
         type: String,
         enum: {
-            values: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+            values: ['pending', 'placed', 'processing', 'ready_for_pickup', 'delivered', 'cancelled', 'out_for_delivery'],
             message: '{VALUE} is not a valid order status'
         },
         default: 'pending'

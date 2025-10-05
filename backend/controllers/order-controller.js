@@ -59,7 +59,7 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
                         shippingAddress,
                         user: user._id,
                         paymentMethod: 'cash_on_delivery',
-                        orderStatus: 'processing',
+                        orderStatus: 'placed',
                         products: cart.products.map(item => ({
                             product: item.product,
                             quantity: item.quantity
@@ -203,11 +203,12 @@ export const cancelOrder = controllerWrapper(async (req, res, next) => {
                 throw new CustomError('BadRequestError', 'Order is already cancelled', 400)
             }
 
-            // cannot cancel the order once it is shipped or delivered
-            else if(['delivered', 'shipped'].includes(orderToCancel.orderStatus)){
+            // cannot cancel the order once it is out for delivery or delivered
+            else if(['delivered', 'out_for_delivery'].includes(orderToCancel.orderStatus)){
+                const status = orderToCancel.orderStatus.split('_').join(' ')
                 throw new CustomError(
                     'BadRequestError', 
-                    `Order cannot be cancelled once it's ${orderToCancel.orderStatus}`, 400)
+                    `Order cannot be cancelled once it's ${status}`, 400)
             }
 
             // cancel the order and save
