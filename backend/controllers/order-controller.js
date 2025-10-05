@@ -121,13 +121,18 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
 // get orders
 export const getOrders = controllerWrapper(async (req, res, next) => {
     const user = req.user;
-
-    // get recent orders (with any orderStatus)
-    const orders = await OrderModel.find({ user: user._id }).populate({
+    const {filter, sort, limit, skip, select} = req.sanitizedQuery;
+    
+    // get recent orders
+    const orders = await OrderModel.find({...filter, user: user._id }).populate({
         path: 'products.product',
         model: 'product',
         select: 'name price category'
-    });
+    })
+    .sort(sort)
+    .limit(limit)
+    .skip(skip)
+    .select(select);
 
     // no order found
     if (orders.length === 0) {
@@ -135,9 +140,21 @@ export const getOrders = controllerWrapper(async (req, res, next) => {
             new CustomError('NotFoundError', 'No recent orders found', 404)
         );
     }
+    
+    // sort orders by status (out_for_delivery > placed > pending > cancelled)
+    const statusOrder = {
+        out_for_delivery: 1,
+        placed: 2,
+        pending: 3,
+        delivered: 4,
+        cancelled: 5
+    };
+
+    const sortedOrders = orders
+    .sort((a, b) => statusOrder[a.orderStatus] - statusOrder[b.orderStatus]);
 
     sendApiResponse(res, 200, {
-        data: orders
+        data: sortedOrders
     });
 });
 

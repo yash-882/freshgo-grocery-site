@@ -5,6 +5,8 @@ import {
     getOrderByID, 
     getOrders } from '../controllers/order-controller.js';
 import { authorizeUser } from '../middlewares/auth-middleware.js';
+import { handleQuery } from '../middlewares/query-middleware.js';
+import { schemaRegistery } from '../constants/schema-registery.js';
 
 const orderRouter = Router()
 
@@ -13,7 +15,7 @@ orderRouter.use(authorizeUser)
 
 orderRouter.route('/')
 .post(createOrder) //create order
-.get(getOrders) //get recent orders
+.get(handleQuery(schemaRegistery.order), getOrders) //get recent orders
 
 orderRouter.route('/cancel/:id')
 .patch(cancelOrder) //cancel order

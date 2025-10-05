@@ -1,9 +1,10 @@
 import ProductModel from "../models/product-model.js"
+import OrderModel from "../models/order-model.js";
 import UserModel from "../models/user-model.js";
 import { schemaFieldHelpers } from "../utils/schema-field-helpers.js";
 
 // Stores schema definitions with categorized fields
-export const schemaRegistery = {
+export const  schemaRegistery = {
     // 'product' schema fields
   product: {
     // numeric fields
@@ -17,7 +18,20 @@ export const schemaRegistery = {
     .getSelectableFields(ProductModel.schema.paths, ['score'])
   },
 
-  // used by Admin only
+  order:{
+    // numeric fields
+    numericFields: schemaFieldHelpers.getNumericFields(OrderModel.schema.paths),
+
+    // all fields
+    allFields: schemaFieldHelpers.getAllFields(OrderModel.schema.paths),
+
+    // selectable fields
+    selectableFields: schemaFieldHelpers
+    .getSelectableFields(OrderModel.schema.paths, 
+      ['paymentStatus', 'user', 'shippingAddress', 'totalAmount'])
+  },
+
+  // used by Admin only 
   user: {
      // numeric fields
     numericFields: schemaFieldHelpers.getNumericFields(UserModel.schema.paths),
