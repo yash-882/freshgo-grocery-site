@@ -14,6 +14,7 @@ import { adminDeleteProductByID, adminDeleteProducts, adminUpdateProductByID, ad
 import { handleQuery } from '../middlewares/query-middleware.js';
 import { schemaRegistery } from '../constants/schema-registery.js';
 import { checkCachedData } from '../middlewares/cache-middleware.js';
+import { pauseAllQueues, pauseQueue, resumeAllQueues, resumeQueue, retryFailedJobs } from '../controllers/queue-controller.js';
 
 const adminRouter = Router();
 
@@ -32,8 +33,6 @@ adminRouter.route('/user-access/:id')
     .patch(updateUserByID)
     .delete(deleteUserByID )
 
-
-
 // operations for multiple products
 adminRouter.route('/product-access')
 .get(handleQuery(schemaRegistery.product, true), checkCachedData('product', true), getProducts)
@@ -46,5 +45,12 @@ adminRouter.route('/product-access/:id')
     .patch(adminUpdateProductByID)
     .delete(adminDeleteProductByID )
 
+
+// operations for queue (BullMQ) 
+adminRouter.post('/queue/retry-failed', retryFailedJobs) // retry failed jobs
+adminRouter.post('/queue/pause/:queueName', pauseQueue) // pause a queue
+adminRouter.post('/queue/pause-all', pauseAllQueues) // pause all queues
+adminRouter.post('/queue/resume/:queueName', resumeQueue) // resume a queue
+adminRouter.post('/queue/resume-all', resumeAllQueues) // resume all queues
 
 export default adminRouter;
