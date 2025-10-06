@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import OrderModel from "../models/order-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
 import controllerWrapper from "../utils/controller-wrapper.js";
@@ -5,7 +6,8 @@ import sendApiResponse from "../utils/api-response.js";
 import CartModel from "../models/cart-model.js";
 import ProductModel from "../models/product-model.js";
 import { getCartSummary, populateCart } from '../utils/cart-helpers.js';
-import mongoose from "mongoose";
+import { startOrderProcessing } from "../queues/order/order-status.js";
+
 
 // create new order (currently supports only cash_on_delivery)
 export const createOrder = controllerWrapper(async (req, res, next) => {
@@ -105,6 +107,9 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
                 { products: [] },
                 { runValidators: true, session }
             );
+            
+            // begin order flow ('processing' to 'delivered')
+            await startOrderProcessing(newOrder._id)
         });
     } catch (err) {
         return next(err);

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Razorpay Test</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+  <button id="pay-btn">Pay ₹500</button>
+  <script>
+    document.getElementById('pay-btn').onclick = function() {
+      const options = {
+        key: "rzp_test_ROcNNOeSgx3sVj", // Razorpay test key
+        amount: 50000, // ₹500 in paise
+        currency: "INR",
+        name: "FreshGo",
+        description: "Test Payment",
+        order_id: "order_RP6bSCvuRY9hJo", // get from server
+        handler: function (response){
+          alert("Payment ID: " + response.razorpay_payment_id);
+        },
+    method: {
+                emi: false,
+                paylater: false
+            }
+      };
+      const rzp = new Razorpay(options);
+      rzp.open();
+    }
+  </script>
+</body>
+</html>
