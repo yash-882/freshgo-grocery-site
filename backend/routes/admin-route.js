@@ -15,6 +15,13 @@ import { handleQuery } from '../middlewares/query-middleware.js';
 import { schemaRegistery } from '../constants/schema-registery.js';
 import { checkCachedData } from '../middlewares/cache-middleware.js';
 import { pauseAllQueues, pauseQueue, resumeAllQueues, resumeQueue, retryFailedJobs } from '../controllers/queue-controller.js';
+import { 
+    deleteOrderByID, 
+    deleteOrders, 
+    getOrderByID, 
+    getOrders, 
+    getOrderStats, 
+    updateOrders } from '../controllers/admin/order-controller.js';
 
 const adminRouter = Router();
 
@@ -52,5 +59,18 @@ adminRouter.post('/queue/pause/:queueName', pauseQueue) // pause a queue
 adminRouter.post('/queue/pause-all', pauseAllQueues) // pause all queues
 adminRouter.post('/queue/resume/:queueName', resumeQueue) // resume a queue
 adminRouter.post('/queue/resume-all', resumeAllQueues) // resume all queues
+
+// order controls
+adminRouter.route('/order')
+  .get(handleQuery(schemaRegistery.order, true), getOrders)     // get all orders
+  .delete(handleQuery(schemaRegistery.order, true), deleteOrders) // delete multiple orders
+  .patch(handleQuery(schemaRegistery.order, true), updateOrders); // update multiple orders
+
+adminRouter.route('/order/:id')
+  .get(getOrderByID)      // get order by ID
+  .delete(deleteOrderByID); // delete order by ID
+
+// order stats
+adminRouter.get('/orders-stats', getOrderStats);
 
 export default adminRouter;
