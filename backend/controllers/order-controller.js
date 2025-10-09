@@ -9,6 +9,7 @@ import CartModel from "../models/cart-model.js";
 import ProductModel from "../models/product-model.js";
 import { getCartSummary, populateCart } from '../utils/cart-helpers.js';
 import { startOrderProcessing } from "../queues/order/order-status.js";
+import { addEmailToQueue } from "../queues/email-queue.js";
 
 
 // create new order (currently supports only cash_on_delivery)
@@ -111,7 +112,12 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
             );
             
             // begin order flow ('processing' to 'delivered')
-            await startOrderProcessing(newOrder._id)
+            await startOrderProcessing({
+                orderID: newOrder._id, 
+                productsName: cart.products.map(item => item.product.name),
+                email: user.email,
+                createdAt: newOrder.createdAt
+            })
         });
     } catch (err) {
         return next(err);
@@ -227,12 +233,12 @@ export const cancelOrder = controllerWrapper(async (req, res, next) => {
                 throw new CustomError('BadRequestError', 'Order is already cancelled', 400)
             }
 
-            // cannot cancel the order once it is out for delivery or delivered
-            else if(['delivered', 'out_for_delivery'].includes(orderToCancel.orderStatus)){
-                const status = orderToCancel.orderStatus.split('_').join(' ')
+            // cannot cancel the order once it is out for delivery
+            else if (orderToCancel.orderStatus === 'out_for_delivery') {
                 throw new CustomError(
-                    'BadRequestError', 
-                    `Order cannot be cancelled once it's ${status}`, 400)
+                    'BadRequestError',
+                    `Orders can't be cancelled once out for delivery; you can refuse them at the door.`,
+                    400)
             }
 
             // cancel the order and save
@@ -273,4 +279,83 @@ export const cancelOrder = controllerWrapper(async (req, res, next) => {
         message: 'Order cancelled successfully',
         data: orderToCancel
     });
-}) 
+})
+
+// handles acceptance or rejection of delivery when the order status is 'reached_destination'
+export const confirmDelivery = controllerWrapper(async (req, res, next) => {
+    const user = req.user;
+    const { isAccepted, id: orderID } = req.params;
+
+    if (!orderID) {
+        return next(new CustomError('BadRequestError', 'Order ID is required', 400));
+    }
+
+    let session, order;
+    try {
+        session = await mongoose.startSession();
+
+        await session.withTransaction(async () => {
+            order = await OrderModel.findOne({ _id: orderID, user: user._id })
+                .populate('products.product', 'name')
+                .session(session);
+
+            // verify order    
+
+            if (!order) 
+                throw new CustomError('NotFoundError', 'Order not found', 404);
+            
+
+            if (['cancelled', 'delivered'].includes(order.orderStatus)) 
+                throw new CustomError('BadRequestError', 'Order has already been delivered or cancelled', 400);
+            
+
+            if (order.orderStatus !== 'reached_destination') 
+                throw new CustomError('BadRequestError', "You can’t confirm the order until the delivery partner reaches the destination", 400)
+            
+
+            // if the order is accepted by the user
+            if (isAccepted === 'false') {
+                // deny order
+                order.orderStatus = 'cancelled';
+                const productUpdates = order.products.map(item => ({
+                    updateOne: {
+                        filter: { _id: item.product._id },
+                        update: {
+                            $inc: { quantity: item.quantity, score: -1 },
+                            $set: { inStock: true }
+                        }
+                    }
+                }));
+                await ProductModel.bulkWrite(productUpdates, { session });
+            } else {
+                // accept order
+                order.orderStatus = 'delivered';
+            }
+
+            await order.save({ session });
+        });
+
+        // after transaction, prepare email and respond
+        const productsName = order.products.map(p => p.product.name).join(', ');
+        const emailDetails = {
+            to: user.email,
+            subject: order.orderStatus === 'cancelled' ? 'Order Cancelled' : 'Order Delivered',
+            text: `Order for "${productsName}", placed on ${order.createdAt.toLocaleDateString()} has been ${order.orderStatus}.`
+        };
+
+        // add to the queue
+        await addEmailToQueue(emailDetails.to, emailDetails.subject, emailDetails.text);
+
+        return sendApiResponse(res, 200, {
+            message: order.orderStatus === 'cancelled'
+                ? 'Order has been cancelled as per your request'
+                : 'Order confirmed and delivered successfully✅',
+            data: order
+        });
+
+    } catch (err) {
+        return next(err);
+    } finally {
+        await session.endSession();
+    }
+});

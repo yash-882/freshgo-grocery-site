@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { 
     cancelOrder, 
+    confirmDelivery, 
     createOrder, 
     getOrderByID, 
     getOrders } from '../controllers/order-controller.js';
@@ -19,6 +20,9 @@ orderRouter.route('/')
 
 orderRouter.route('/cancel/:id')
 .patch(cancelOrder) //cancel order
+
+orderRouter.route('/confirm-delivery/:id/:isAccepted')
+.post(confirmDelivery) //accept or deny order
 
 orderRouter.route('/:id')
 .get(getOrderByID) //get order by ID
