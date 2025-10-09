@@ -5,9 +5,9 @@ const app = express();
 import authRouter from './routes/auth-router.js';
 import productRouter from './routes/product-route.js';
 import cartRouter from './routes/cart-route.js';
-import adminRouter from './routes/admin-route.js';
 import userRouter from './routes/user-route.js';
 import orderRouter from './routes/order-route.js';
+import adminRouter from './routes/admin/admin-gateway.js';
 
 // auth strategies
 import googleAuth from './auth-strategies/google-auth.js';
@@ -19,6 +19,7 @@ import GlobalErrorHandler from './error-handling/global-error-handler.js';
 import passport from 'passport';
 import cookieParser from 'cookie-parser';
 import qs from 'qs';
+import CustomError from './error-handling/custom-error-class.js';
 
 
 // parses query strings ("?price[gt]=20&sort=-price" -> {price: {gt: "20"}, sort="-price"})
@@ -41,20 +42,28 @@ passport.use(googleAuth)
 // auth router
 app.use('/api/auth', authRouter)
 
-// admin router (accessible by only-admin)
+// admin router (admin-only)
 app.use('/api/admin', adminRouter)
 
-// user router (accessible by all roles (user, seller, admin))
+// user router (authenticated-only)
 app.use('/api/user', userRouter)
 
-// product router (accessible by all roles (user, seller, admin, unauthenticated user))
+// product router (public)
 app.use('/api/product', productRouter)
 
-// cart router(accessible to authenticated users only)
+// cart router (authenticated-only)
 app.use('/api/cart', cartRouter)
 
-// order router (accessible to authenticated users only)
+// order router (authenticated-only)
 app.use('/api/order', orderRouter)
+
+
+// NOT-FOUND MIDDLEWARE (executes when no route above matches the path)
+app.use((req, res, next) => {
+
+    next(new CustomError('NotFoundError', 'Route not found!', 404))
+
+})
 
 // global error handler middleware
 app.use(GlobalErrorHandler)

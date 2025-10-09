@@ -6,7 +6,7 @@ const IOredisClient = new IOredis({
     password: process.env.REDIS_PASSWORD,
     host: process.env.REDIS_HOST,
     port: Number(process.env.REDIS_PORT),
-    maxRetriesPerRequest: null
+    maxRetriesPerRequest: null,
 })
 
 export default IOredisClient

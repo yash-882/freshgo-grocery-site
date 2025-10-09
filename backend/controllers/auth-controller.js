@@ -12,7 +12,6 @@ import ProductModel from "../models/product-model.js";
 import sendApiResponse from "../utils/api-response.js";
 import CartModel from "../models/cart-model.js";
 import passport from "passport";
-import { readSync } from "fs";
 
 // signup user after OTP validation
 export const signUp = controllerWrapper(async (req, res, next) => {

@@ -1,7 +1,12 @@
-import sendApiResponse from "../utils/api-response.js";
-import controllerWrapper from "../utils/controller-wrapper.js";
-import queues from "../constants/queues.js";
-import CustomError from "../error-handling/custom-error-class.js";
+import CustomError from '../../error-handling/custom-error-class.js';
+import controllerWrapper from '../../utils/controller-wrapper.js';
+import sendApiResponse from '../../utils/api-response.js';
+import { orderQueue } from '../../queues/order/order-status.js';
+
+// all queues
+const queues = {
+    orders: orderQueue
+}
 
 // retry all failed jobs for each queue
 export const retryFailedJobs = controllerWrapper(async (req, res, next) => {

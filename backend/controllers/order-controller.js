@@ -1,3 +1,5 @@
+// authenticated-only
+
 import mongoose from "mongoose";
 import OrderModel from "../models/order-model.js";
 import CustomError from "../error-handling/custom-error-class.js";
