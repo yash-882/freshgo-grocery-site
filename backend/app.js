@@ -14,12 +14,12 @@ import googleAuth from './auth-strategies/google-auth.js';
 
 // error custom module
 import GlobalErrorHandler from './error-handling/global-error-handler.js';
+import CustomError from './error-handling/custom-error-class.js';
 
 // npm packages
 import passport from 'passport';
 import cookieParser from 'cookie-parser';
 import qs from 'qs';
-import CustomError from './error-handling/custom-error-class.js';
 
 
 // parses query strings ("?price[gt]=20&sort=-price" -> {price: {gt: "20"}, sort="-price"})
@@ -29,6 +29,17 @@ app.set("query parser", (query)=> {
 
 // parse JSON data
 app.use(express.json())
+
+
+// handle empty body for PUT, POST, PATCH requests
+app.use((req, res, next) => {
+    const methodsWithBody = ['POST', 'PUT', 'PATCH']
+
+    if(methodsWithBody.includes(req.method.toUpperCase()) && !req.body) 
+        req.body = {}
+
+    next()
+})
 
 // parse cookies
 app.use(cookieParser())
