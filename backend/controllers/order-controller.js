@@ -10,6 +10,7 @@ import ProductModel from "../models/product-model.js";
 import { getCartSummary, populateCart } from '../utils/cart-helpers.js';
 import { startOrderProcessing } from "../queues/order/order-status.js";
 import { addEmailToQueue } from "../queues/email-queue.js";
+import { updateProductsOnCancellation, updateProductsOnDelivery } from "../utils/product-helpers.js";
 
 
 // create new order (currently supports only cash_on_delivery)
@@ -86,7 +87,6 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
                         {
                             $set: {
                                 quantity: { $subtract: ["$quantity", item.quantity] },
-                                score: { $add: ["$score", 1] },
                                 inStock: { $gt: [{ $subtract: ["$quantity", item.quantity] }, 0] }
                             }
                         }
@@ -245,26 +245,8 @@ export const cancelOrder = controllerWrapper(async (req, res, next) => {
             orderToCancel.orderStatus = 'cancelled';
             await orderToCancel.save({session});
 
-            // restore 'stock' and product 'score'
-            const productsUpdates = orderToCancel.products.map(item => ({
-
-                updateOne: {
-                    filter: { _id: item.product },
-                    update: {
-                        $inc: {
-                            quantity: item.quantity,
-                            score: -1
-                        },
-                        $set: {
-                            inStock: true
-                        }
-                    }
-
-                }
-            })
-            )
-
-        await ProductModel.bulkWrite(productsUpdates, {session})
+            // update products (restore stock, etc)
+            await updateProductsOnCancellation(orderToCancel.products);
 
         })
     }
@@ -312,28 +294,20 @@ export const confirmDelivery = controllerWrapper(async (req, res, next) => {
             if (order.orderStatus !== 'reached_destination') 
                 throw new CustomError('BadRequestError', "You can’t confirm the order until the delivery partner reaches the destination", 400)
             
-
             // if the order is accepted by the user
             if (isAccepted === 'false') {
                 // deny order
                 order.orderStatus = 'cancelled';
-                const productUpdates = order.products.map(item => ({
-                    updateOne: {
-                        filter: { _id: item.product._id },
-                        update: {
-                            $inc: { quantity: item.quantity, score: -1 },
-                            $set: { inStock: true }
-                        }
-                    }
-                }));
-                await ProductModel.bulkWrite(productUpdates, { session });
+                await updateProductsOnCancellation(order.products)
+                
             } else {
                 // accept order
                 order.orderStatus = 'delivered';
+                await updateProductsOnDelivery(order.products)
             }
 
             await order.save({ session });
-        });
+        }); 
 
         // after transaction, prepare email and respond
         const productsName = order.products.map(p => p.product.name).join(', ');
