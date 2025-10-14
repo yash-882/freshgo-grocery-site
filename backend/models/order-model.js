@@ -20,12 +20,18 @@ const OrderSchema = new Schema({
                 ref: 'product',
                 required: [true, 'Product ID is required']
             },
+
             quantity: {
                 type: Number,
                 required: true,
                 min: [1, 'Quantity must be greater than 0'],
                 default: 1
             },
+            priceAtPurchase: {
+                type: Number,
+                required: true,
+                min: [0, 'Price cannot be negative']
+            }
         }
     ],
     user: {

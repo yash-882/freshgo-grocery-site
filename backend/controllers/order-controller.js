@@ -67,8 +67,9 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
                         paymentMethod: 'cash_on_delivery',
                         orderStatus: 'placed',
                         products: cart.products.map(item => ({
-                            product: item.product,
-                            quantity: item.quantity
+                            product: item.product._id,
+                            quantity: item.quantity,
+                            priceAtPurchase: item.product.price,
                         })),
                         totalAmount: grandTotal
                     }],
