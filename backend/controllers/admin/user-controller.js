@@ -37,10 +37,6 @@ export const getUsers = controllerWrapper(async (req, res, next) => {
     .limit(limit)
     .select(select); 
 
-    if(users.length === 0)    
-        return next(new CustomError('NotFoundError', 'No users found', 404));
-  
-
     // send users data 
     sendApiResponse(res, 200, {
         data: users,

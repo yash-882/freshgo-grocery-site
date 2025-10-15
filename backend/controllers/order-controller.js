@@ -147,13 +147,6 @@ export const getOrders = controllerWrapper(async (req, res, next) => {
     .limit(limit)
     .skip(skip)
     .select(select);
-
-    // no order found
-    if (orders.length === 0) {
-        return next(
-            new CustomError('NotFoundError', 'No recent orders found', 404)
-        );
-    }
     
     // sort orders by status (out_for_delivery > placed > pending > cancelled)
     const statusOrder = {
@@ -164,8 +157,9 @@ export const getOrders = controllerWrapper(async (req, res, next) => {
         cancelled: 5
     };
 
-    const sortedOrders = orders
-    .sort((a, b) => statusOrder[a.orderStatus] - statusOrder[b.orderStatus]);
+    const sortedOrders = orders.length > 0 ? orders
+    .sort((a, b) => statusOrder[a.orderStatus] - statusOrder[b.orderStatus])
+    : [];
 
     sendApiResponse(res, 200, {
         data: sortedOrders

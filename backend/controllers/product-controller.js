@@ -22,11 +22,6 @@ export const searchProducts = controllerWrapper(async (req, res, next) => {
     .skip(skip)
     .limit(limit)
 
-    if(searchedProducts.length === 0){
-    return next(
-      new CustomError('NotFoundError', 'No products match your search query.', 404))
-    }
-
     const uniqueID = cacheKeyBuilders.publicResources(req.sanitizedQuery);
   // store products in cache(Redis)
     await storeCachedData(uniqueID, {data: searchedProducts}, 'product')
@@ -103,22 +98,20 @@ export const getProducts = controllerWrapper(async (req, res, next) => {
     model: 'user' // name of the referenced model
   }); 
 
-  if(products.length === 0){
-    return next(new CustomError('NotFoundError', 'No products found', 404));
-  }
-
   let uniqueID;
 
   //get unique ID ('<hash-of-query-string>')
-
-  if(req.user?.roles.includes('admin'))
-  uniqueID = cacheKeyBuilders.pvtResources(req.user.id, req.sanitizedQuery);
-
-  else 
-  uniqueID = cacheKeyBuilders.publicResources(req.sanitizedQuery);
+  if(products.length > 0){
+    if(req.user?.roles.includes('admin'))
+    uniqueID = cacheKeyBuilders.pvtResources(req.user.id, req.sanitizedQuery);
   
-  // store products in cache(Redis)
-  await storeCachedData(uniqueID, { data: products, ttl: 600 }, 'product');
+    else 
+    uniqueID = cacheKeyBuilders.publicResources(req.sanitizedQuery);
+    
+    // store products in cache(Redis)
+    await storeCachedData(uniqueID, { data: products, ttl: 600 }, 'product');
+  }
+
 
   sendApiResponse(res, 200, {
     data: products,
@@ -138,19 +131,16 @@ export const getMyProducts = controllerWrapper(async (req, res, next) => {
   .sort(sort)
   .skip(skip)
   .limit(limit)
-  .select(select); 
-
-  if(products.length === 0){
-    return next(new CustomError('NotFoundError', 'You have no products yet', 404));
+  .select(select);
+  
+  if(products.length > 0){
+    // store products in cache(Redis)
+    const uniqueID = cacheKeyBuilders.pvtResources(userID, req.sanitizedQuery);
+    await storeCachedData(uniqueID, { data: products, ttl: 300 }, 'product');
   }
-
-  // store products in cache(Redis)
-  const uniqueID = cacheKeyBuilders.pvtResources(userID, req.sanitizedQuery);
-  await storeCachedData(uniqueID, { data: products, ttl: 300 }, 'product');
 
   sendApiResponse(res, 200, {
     data: products,
-    dataLength: products.length,
 })
 
 })

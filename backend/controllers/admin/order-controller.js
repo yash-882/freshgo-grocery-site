@@ -24,10 +24,6 @@ export const getOrders = controllerWrapper(async (req, res, next) => {
         .skip(skip)
         .select(select);
 
-    if (orders.length === 0) {
-        return next(new CustomError('NotFoundError', 'No orders found', 404));
-    }
-
     sendApiResponse(res, 200, {
         data: orders,
         dataLength: orders.length,
