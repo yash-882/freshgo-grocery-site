@@ -8,6 +8,8 @@ import {
     updateMyProfile } from '../controllers/user-controller.js';
 import { authorizeUser, roleBasedAccess } from '../middlewares/auth-middleware.js';
 import { 
+    categoryStats, 
+    revenueComparison, 
     revenueStats, 
     topFiveSellingProducts } from '../controllers/seller-dashboard/dashboard.js';
 
@@ -40,6 +42,12 @@ userRouter.get('/dashboard/revenue-stats', revenueStats)
 
 // top 5 selling products
 userRouter.get('/dashboard/top-five-selling-products', topFiveSellingProducts)
+
+// category-wise stats
+userRouter.get('/dashboard/category-stats', categoryStats)
+
+// current period vs previous period
+userRouter.get('/dashboard/revenue-comparison/:comparison', revenueComparison)
 
 
 export default userRouter;
