@@ -1,8 +1,8 @@
-import './configs/load-env.js' //load environment variables
+import './configs/loadEnv.js' //load environment variables
 import mongoose from 'mongoose'
-import redisClient from './configs/redis-client.js'
+import redisClient from './configs/redisClient.js'
 import app from './app.js'
-import ioredisClient from './configs/ioredis-client.js'
+import ioredisClient from './configs/ioredisClient.js'
 
 
 // listens for Redis client errors (used for storage)

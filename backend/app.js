@@ -2,19 +2,19 @@ import express from 'express';
 const app = express();
 
 // import routers
-import authRouter from './routes/auth-router.js';
-import productRouter from './routes/product-route.js';
-import cartRouter from './routes/cart-route.js';
-import userRouter from './routes/user-route.js';
-import orderRouter from './routes/order-route.js';
-import adminRouter from './routes/admin/admin-gateway.js';
+import authRouter from './routes/auth.js';
+import productRouter from './routes/product.js';
+import cartRouter from './routes/cart.js';
+import userRouter from './routes/user.js';
+import orderRouter from './routes/order.js';
+import adminRouter from './routes/admin/adminGateway.js';
 
 // auth strategies
-import googleAuth from './auth-strategies/google-auth.js';
+import googleAuth from './auth-strategies/googleAuth.js';
 
 // error custom module
-import GlobalErrorHandler from './error-handling/global-error-handler.js';
-import CustomError from './error-handling/custom-error-class.js';
+import GlobalErrorHandler from './middlewares/error.js';
+import CustomError from './error-handling/customError.js';
 
 // npm packages
 import passport from 'passport';

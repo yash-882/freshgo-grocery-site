@@ -1,6 +1,6 @@
 // List of BullMQ queues
 
-import { orderQueue } from "../queues/order/order-status.js";
+import { orderQueue } from "../queues/order.js";
 
 export default {
 orderQueue //queue name ("orderQueue")
