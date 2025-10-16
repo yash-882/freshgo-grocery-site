@@ -50,12 +50,16 @@ export const pauseQueue = controllerWrapper(async (req, res, next) => {
     }
 
     // queue is already paused
-    if (queue.isPaused()) {
+    if (await queue.isPaused()) {
         return next(new CustomError('BadRequestError', `Queue: "${queueName}" is already paused`, 400))
     }
 
     // pause single queue (the workers of this queue will not accept any new job after pausing)
     await queue.pause()
+
+    sendApiResponse(res, 200, {
+        message: `Queue: "${queueName}" paused successfully`
+    })
 })
 
 // pause all queues
@@ -66,23 +70,23 @@ export const pauseAllQueues = controllerWrapper(async (req, res, next) => {
         return next(new CustomError('NotFoundError', 'No queues found to pause', 404))
     }
 
-    // get unpaused queues
-    const queuesToPause = queueNames.filter(queueName => !queues[queueName].isPaused())
+    // get array of booleans (true for paused queue / false for unpaused queue)  
+    const queuePromises = await Promise.all(queueNames.map(queueName => queues[queueName].isPaused()))
 
-    if(queuesToPause.length === 0){
+    if(queuePromises.every(result => result == true)){
         return next(new CustomError('BadRequestError', 'All queues are already paused', 400))
     }
 
     // pause each queue
-    for (const queueName of queuesToPause) {
+    for (const queueName of queueNames) {
  
         // pause queue (the workers of this queue will not accept any new job after pausing)
         await queues[queueName].pause()
-
     }
+    const pausedCount = queuePromises.filter(result => result == false).length
 
     sendApiResponse(res, 200, {
-        message: `${queuesToPause.length} queues paused successfully`
+        message: `${pausedCount} queue(s) paused successfully`
     })
 })
 
@@ -138,20 +142,16 @@ export const resumeAllQueues = controllerWrapper(async (req, res, next) => {
         return next(new CustomError('NotFoundError', 'No queues found to resume', 404));
     }
 
-    // get paused queues
-    const queuesToResume = [];
-    for (const queueName of queueNames) {
-        if (await queues[queueName].isPaused()) {
-            queuesToResume.push(queueName);
-        }
-    }
+    // get array of booleans (true for paused queue / false for unpaused queue)  
+    const queuePromises = await Promise
+    .all(queueNames.map(queueName => queues[queueName].isPaused()))
 
-    if (queuesToResume.length === 0) {
+    if (queuePromises.every(result => result == false)) {
         return next(new CustomError('BadRequestError', 'All queues are already resumed', 400));
     }
 
     // resume each paused queue and reschedule delayed jobs
-    for (const queueName of queuesToResume) {
+    for (const queueName of queueNames) {
         const queue = queues[queueName];
         const delayedJobs = await queue.getDelayed();
 
@@ -172,7 +172,10 @@ export const resumeAllQueues = controllerWrapper(async (req, res, next) => {
         await queue.resume();
     }
 
+    // count resumed queue
+    const resumedCount = queuePromises.filter(result => result == true).length
+
     sendApiResponse(res, 200, {
-        message: `${queuesToResume.length} queues resumed successfully`
+        message: `${resumedCount} queue(s) resumed successfully`
     });
 });
