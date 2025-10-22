@@ -21,6 +21,11 @@ import passport from 'passport';
 import cookieParser from 'cookie-parser';
 import qs from 'qs';
 
+// congfigs
+import setCors from './configs/cors.js';
+
+// allow requests from the specified client origin and include credentials (like cookies) 
+app.use(setCors())
 
 // parses query strings ("?price[gt]=20&sort=-price" -> {price: {gt: "20"}, sort="-price"})
 app.set("query parser", (query)=> {
