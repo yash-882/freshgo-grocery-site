@@ -6,6 +6,8 @@ import controllerWrapper from '../utils/controllerWrapper.js';
 import sendApiResponse from '../utils/apiResponse.js';
 import { deleteCachedData, storeCachedData } from '../utils/helpers/cache.js';
 import cacheKeyBuilders  from '../constants/cacheKeyBuilders.js';
+import cloudinary from '../configs/cloudinary.js';
+import { getProductBodyForDB, limitProductCreation } from '../utils/helpers/product.js';
 
 // search products 
 export const searchProducts = controllerWrapper(async (req, res, next) => {
@@ -33,51 +35,41 @@ export const searchProducts = controllerWrapper(async (req, res, next) => {
 
 // create new product (accessible roles: Seller only)
 export const createProduct = controllerWrapper(async (req, res, next) => {
+  // Multer keeps the stringify data in req.body (express.json() can't parse it)
+  const productData = JSON.parse(req.body.productData);
+
+  if(!productData){
+    return next(new CustomError('BadRequestError', 'Product data is required', 400));
+  }
 
   // body is empty
-  if(Object.keys(req.body).length === 0)
+  if(Object.keys(productData).length === 0)
     return new CustomError('BadRequestError', 
         `Please enter all required fields!`, 400)
+        
+  // throws error if products limit exceeds
+  limitProductCreation(productData)
 
-  // if bulk creation limit exceeds
-  const BULK_CREATION_LIMIT = 100;
-  if(Array.isArray(req.body) && (req.body.length > BULK_CREATION_LIMIT)){
-    return next(
-      new CustomError('BadRequestError', 
-        `Cannot create more than ${BULK_CREATION_LIMIT} products at once`, 400))
-  }
+  // get product(s) body for insertion in DB
+  const productDataDB = getProductBodyForDB(productData, req.files, req.user);
 
-  let productData;
-
-  // for multiple products
-  if(Array.isArray(req.body)){
-    // adding seller ID and score to each product
-    productData = req.body.map(product => ({
-      ...product, 
-      seller: req.user.id,  //current seller ID
-      score: 0, // ensures user cannot set the score manually
-
-      // createdAt is automatically set on creation and locked against modification
-      createdAt: undefined  
-    })
-  )
-  } else{
-
-    // for a single product
-    productData = { 
-      ...req.body, 
-      seller: req.user.id,  //current seller ID
-      score: 0 // ensures user cannot set the score manually
-    }
-  }
-  
   // creating product...
-  const newProduct = await ProductModel.create(productData);
+  let createdProductData;
+
+  try {
+    createdProductData = await ProductModel.create(productDataDB);
+  }
+  catch (err) {
+    // revert uploaded images by deleting them from Cloudinary
+    await cloudinary.api.delete_resources(req.files.map(file => file.filename));
+    
+    return next(err)
+  }
 
   //product created
   sendApiResponse(res, 201, {
     message: 'Product created successfully',
-    data: newProduct
+    data: createdProductData
 })
 })
 
@@ -121,7 +113,7 @@ export const getProducts = controllerWrapper(async (req, res, next) => {
 
 // get my products  (accessible roles: Seller only)
 export const getMyProducts = controllerWrapper(async (req, res, next) => {
-  const userID = req.user.id; //seller
+  const userID = req.user._id; //seller
   const {filter, sort, limit, skip, select } = req.sanitizedQuery; //filter  
 
   // getting seller products...
