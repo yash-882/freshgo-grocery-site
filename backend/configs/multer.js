@@ -36,7 +36,8 @@ function uploader({
     const uploads = multer({
         storage,
         limits: {
-            fileSize //max file size
+            fileSize, //max file size
+            files: 5 //max number of files
         },
 
         // check if file is an image
