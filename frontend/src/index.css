@@ -1,0 +1,27 @@
+@font-face{
+  font-family:"mulish-font";
+  src: url("./assets/fonts/Mulish-VariableFont_wght.ttf") format("truetype");
+}
+*{
+  margin: 0;         /* Remove default margins */
+  padding: 0;        /* Remove default padding */
+  box-sizing: border-box; /* Ensures padding & border don't affect width */
+  font-family: "mulish-font", sans-serif; /* Apply default font */
+  -webkit-tap-highlight-color: transparent;
+} 
+button{
+  cursor: pointer;
+}
+
+:root {
+  --bg-color: white;
+  --text-color: black;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: black;
+    --text-color: white;
+  }
+}
+
