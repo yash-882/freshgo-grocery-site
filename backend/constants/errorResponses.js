@@ -46,7 +46,20 @@ const prodErrorHandlers = {
     ForbiddenError: err => err.message || 'You do not have permission to access this resource',
 
     // conflict error (duplication)
-    ConflictError: err => err.message || 'This field is already taken'
+    ConflictError: err => err.message || 'This field is already taken',
+
+    MulterError: err => {
+        switch (err.code){
+            case 'LIMIT_UNEXPECTED_FILE':
+                return 'File field name is invalid!'
+            case 'LIMIT_FILE_SIZE':
+                return 'File size is too large. Maximum 1MB per file is allowed!'
+            case 'LIMIT_FILE_COUNT':
+                return 'Too many files uploaded!'
+            default:
+                return 'Something went wrong with file upload!'
+        }
+    }
 }
 
 export default prodErrorHandlers;

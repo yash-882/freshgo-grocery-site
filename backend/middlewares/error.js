@@ -20,12 +20,12 @@ const OPERATIONAL_ERRORS= new Map([
     ['ConflictError', 409], //Duplicate data error
 ])
 
-// returns error properties (errorName, errorMessage, etc) sent as a response
+// returns error properties (name, message, etc) sent as a response
 const getErrorProps = (err) => {
     const errProps = {
         status: 'fail',
-        errorName: err.name || 'UnknownError',
-        errorMessage: err.message || 'Something went wrong! please try again later',
+        name: err.name || 'UnknownError',
+        message: err.message || 'Something went wrong! please try again later',
         statusCode: err.statusCode || OPERATIONAL_ERRORS.get(err.name) || 500,
         isOperational: !!OPERATIONAL_ERRORS.get(err.name), //client causes this error (not a server bug)
         stack: err.stack, //stack trace
@@ -38,6 +38,15 @@ const getErrorProps = (err) => {
         errProps.isOperational = true //client caused this error (not a server bug)
     }
 
+    // for multer errors
+    const multerErrorCodes = ['LIMIT_UNEXPECTED_FILE', 'LIMIT_FILE_SIZE', 'LIMIT_FILE_COUNT']
+
+    if(multerErrorCodes.includes(err.code)){
+        errProps.statusCode = 400;
+        errProps.isOperational = true;
+    }
+    
+    // console.log('code', err.code);
     return errProps
 }
 

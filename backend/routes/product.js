@@ -58,7 +58,7 @@ productRouter.post('/',
         fileType: 'image',
         saveFormat: 'jpeg', //save images in jpeg format
         // 5 images per product
-    }).array('images', process.env.BULK_CREATION_LIMIT_PER_REQUEST * 5),
+    }).array('images'),
     createProduct) //create product
 
 
