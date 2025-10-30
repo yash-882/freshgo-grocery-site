@@ -173,7 +173,7 @@ body{
   padding: 0.6rem 0.75rem;
   color: #fff;
   text-decoration: none;
-  border-radius: 16px;
+  border-radius: 10px;
   transition: all 0.3s ease;
   font-size: 0.9rem;
   font-weight: 500;
@@ -184,7 +184,6 @@ body{
 }
 
 .nav-item-custom:hover {
-  /* suggest */
   background-color: #333;
   color: #76aaf7;
   border-color: #3a3a3a;
@@ -254,6 +253,43 @@ body{
   padding: 3px 5px;
 }
 
+/* Main app */
+.app-main {
+  margin-top: 80px; /* Height of navbar + some spacing */
+  padding: 10px;
+  min-height: calc(100vh - 80px);
+  color: #fff;
+}
+
+
+/* Product category section */
+
+.product-category-items-list {
+  border-radius: 14px;
+}
+
+.product-category-item {
+  color: #fff;
+  font-size: 0.8rem;
+  border-radius: 14px;
+  transition: background-color 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-category-item:hover {
+  background-color: rgba(145, 145, 219, 0.132);
+}
+.category-product-image{
+  background-color: #ffffff27;
+  padding: 3px;
+  border-radius: 9px;
+}
+.greyish-font{
+  color: rgba(225, 225, 225, 0.89);
+}
+
+
 /* Responsive Styles */
 @media (max-width: 767.98px) {
   .address-text {
@@ -277,6 +313,7 @@ body{
   .nav-label {
     display: inline;
   }
+
 }
 
 /* Hide labels on tablets and smaller */
@@ -291,9 +328,12 @@ body{
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 991.98px) {
   .orders-link {
     display: none
+  }
+  .app-main {
+    margin-top: 115px;
   }
 
   .nav-visible-menu {

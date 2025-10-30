@@ -20,10 +20,9 @@ const ProductSchema = new Schema({
         trim: true,
         lowercase: true,
         enum: {
-            values: ['fruits', 'vegetables', 'personal_care_and_household', 'dairy', 'meat', 'beverages', 'snacks', 'health_and_wellness'],
+            values: ['fruits', 'vegetables', 'personal_care', 'dairy', 'meat', 'beverages', 'snacks', 'health_and_wellness',],
             message: "Invalid category! '{VALUE}'"
         }
-        
     },
     price: {
         type: Number,
