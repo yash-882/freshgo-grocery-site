@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import productCategories from '../constants/productCategories.js';
 
 // PRODUCT SCHEMA
 const ProductSchema = new Schema({
@@ -8,9 +9,9 @@ const ProductSchema = new Schema({
         trim: true,
         validate: {
             validator: function (name) {
-                return name.length <= 30 && name.length >= 2;
-            }, 
-            message: () => 'Name must be between 2 and 30 characters long'
+                return name.length < 50 && name.length > 2;
+            },
+            message: () => 'Name length must be between 2 and 50'
         }
     },
 
@@ -20,10 +21,32 @@ const ProductSchema = new Schema({
         trim: true,
         lowercase: true,
         enum: {
-            values: ['fruits', 'vegetables', 'personal_care_and_household', 'dairy', 'meat', 'beverages', 'snacks', 'health_and_wellness'],
+            values: [
+                ...new Set(
+                    productCategories.map(category => category?.name?.toLowerCase() || ''))
+            ],
             message: "Invalid category! '{VALUE}'"
         }
-        
+    },
+    subcategory: {
+        type: String,
+        required: true,
+        trim: true,
+        lowercase: true,
+        validate: {
+            // ensures subcategory belongs to its valid category 
+            // Incorrect:( Fruits: Chips)
+            // Correct: (Fruits: Apple)
+            validator: function (subcategory) {
+                const category = productCategories.find(categ => 
+                    categ.name.toLowerCase() === this.category.toLowerCase()
+                );
+
+                if (!category) return false;
+                return category.subcategories.includes(subcategory);
+            },
+            message: () => 'Invalid subcategory!'
+        }
     },
     price: {
         type: Number,
@@ -38,7 +61,7 @@ const ProductSchema = new Schema({
         minlength: [20, 'Min 20 characters are required for the description!'],
         maxlength: [500, 'Max 500 characters are allowed for the description!'],
     },
-    inStock:{
+    inStock: {
         type: Boolean,
         default: true,
     },
@@ -61,7 +84,7 @@ const ProductSchema = new Schema({
         trim: true,
         lowercase: true,
         validate: {
-            validator: function (tags){
+            validator: function (tags) {
                 return tags.length >= 1 && tags.length <= 20
             },
             message: () => 'Tags (1-20 required)'
@@ -70,8 +93,8 @@ const ProductSchema = new Schema({
     images: {
         type: [String],
         required: true,
-         validate: {
-            validator: function (images){
+        validate: {
+            validator: function (images) {
                 return images.length >= 1 && images.length <= 5
             },
             message: () => 'Images (1-5 required)'
@@ -107,7 +130,7 @@ ProductSchema.index({
 ProductSchema.pre('save', function (next) {
 
     // update stock when no quantity available
-    if(this.quantity <= 0){
+    if (this.quantity <= 0) {
         this.quantity = 0;
         this.inStock = false;
     }
