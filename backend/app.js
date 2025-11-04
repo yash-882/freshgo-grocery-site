@@ -8,6 +8,7 @@ import cartRouter from './routes/cart.js';
 import userRouter from './routes/user.js';
 import orderRouter from './routes/order.js';
 import adminRouter from './routes/admin/adminGateway.js';
+import categoryRouter from './routes/productCategory.js';
 
 // auth strategies
 import googleAuth from './auth-strategies/googleAuth.js';
@@ -72,6 +73,9 @@ app.use('/api/cart', cartRouter)
 
 // order router (authenticated-only)
 app.use('/api/order', orderRouter)
+
+// Categories with their subcategories for the frontend to display
+app.use('/api/category', categoryRouter)
 
 
 // NOT-FOUND MIDDLEWARE (executes when no route above matches the path)

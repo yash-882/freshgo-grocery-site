@@ -6,7 +6,6 @@ import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
 // middleware to get cached products (stored in Redis)
 // resourceType can be a product/cart/user/order, etc
 export const checkCachedData = (resourceType,  isPvtResource=false) => {
-
   return controllerWrapper(async (req, res, next) => {
     // query or document ID is used for a uniqueID as a part of Redis key
     let queryOrID;
@@ -18,7 +17,7 @@ export const checkCachedData = (resourceType,  isPvtResource=false) => {
     } 
     else{
       queryOrID = cacheKeyBuilders
-      .publicResources(req.sanitizedQuery || req.params.id)
+      .publicResources(req.sanitizedQuery || req.params.id || req.originalUrl)
     }
 
     if (!queryOrID) return next(); // nothing to build cache from
