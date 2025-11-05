@@ -1,10 +1,11 @@
 export const dairy = {
     label: 'Dairy',
+    categoriesApi: ['dairy'],
     products: [
         {
             productName: 'Milk',
             imageUrl: 'https://res.cloudinary.com/dusia02q8/image/upload/v1761746432/milk_vql23d.png'
-        },
+        },  
         {
             productName: 'Desi Ghee',
             imageUrl: 'https://res.cloudinary.com/dusia02q8/image/upload/desi-ghee_gqqy3p.png'
@@ -22,6 +23,7 @@ export const dairy = {
 
 export const snacksAndBeverages = {
     label: 'Snacks & Beverages',
+    categoriesApi: ['snacks', 'beverages'],
     products: [{
         productName: 'Biscuits',
         imageUrl: 'https://res.cloudinary.com/dusia02q8/image/upload/v1761746415/biscuits_zm5ohb.png'
@@ -59,6 +61,7 @@ export const snacksAndBeverages = {
 
 export const fruitsAndVegetables = {
     label: 'Fruits & Vegetables',
+    categoriesApi: ['vegetables', 'fruits'],
     products: [
         {
             productName: 'Fresh Vegetables',
@@ -73,6 +76,7 @@ export const fruitsAndVegetables = {
 
 export const healthAndWellness = {
     label: 'Health & Wellness',
+    categoriesApi: ['health_and_wellness'],
 
     products: [
         {
@@ -97,6 +101,7 @@ export const healthAndWellness = {
 
 export const personalCare = {
     label: 'Personal Care',
+    categoriesApi: ['personal_care'],
     products: [
         {
             productName: 'Moisturizers & Creams',

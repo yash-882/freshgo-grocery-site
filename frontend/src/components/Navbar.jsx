@@ -83,7 +83,7 @@ const Navbar = () => {
               {/* Button to expand more optins/settings  */}
               <div className="expand-nav-items">
                 <button onClick={handleExpandNavItems} className="expand-nav-items-btn">
-                  <LucideMoreVertical size={22} />
+                  <LucideMoreVertical color='white' size={22} />
                 </button>
               </div>
 

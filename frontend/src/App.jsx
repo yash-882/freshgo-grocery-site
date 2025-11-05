@@ -1,17 +1,16 @@
-import { useEffect, useState } from 'react'
 import './App.css'
 import Navbar from './components/Navbar'
-import ProductCategories from './components/ProductCategories'
+import { Outlet } from 'react-router-dom'
 
 function App() {
 
   return (
     <>
-    <Navbar/>
-    <main className="app-main">
-      {/* Main content */}
-    <ProductCategories/>
-    </main>
+      <Navbar />
+      <main className="app-main">
+        <Outlet />
+      </main>
+
     </>
   )
 }
