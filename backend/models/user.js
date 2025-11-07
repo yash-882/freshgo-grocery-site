@@ -75,7 +75,7 @@ const UserSchema = new Schema({
     roles: {
         type: [String], //array of strings for roles
         enum: {
-            values:['user', 'admin', 'seller'],
+            values:['user', 'admin', 'warehouse_manager'],
             message: '{VALUE} is not a valid role'
         },
         default: ['user'], // default role is 'user'
@@ -87,6 +87,7 @@ const UserSchema = new Schema({
         type: [AddressSchema],
         default: []
     },
+
 
     auth: {
         type: [String],
@@ -122,45 +123,31 @@ UserSchema.pre('save', async function(next) {
 // runs before updating the document(s)
 UserSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], 
     async function(next) {
-    const updates = this.getUpdate(); //changes for updation
+    const updates = this.getUpdate(); //changes for updationrf
+        if (updates.$set) {
+            updates = updates.$set;
+        }
 
-    // prevents direct updates to sensitive fields
-    delete updates.password;
-    delete updates.email;
-    delete updates.auth;
-    delete updates.roles
+    // prevents direct updates by non-admin roles to sensitive fields
+    const notAllowedUpdates = ['email', 'auth', 'roles']
+
+    if(!updates.byAdmin){
+        Object.keys(updates).forEach(update => {
+            if(notAllowedUpdates.includes(update)){
+                delete updates[update]
+            }
+        })
+    }
 
     // this field is only allowed for updation through .save()
     delete updates.addresses;
 
-    // allow a single value as a role for updation
-    // new role will be pushed manually in roles[] using $addToSet(prevents duplicates)
-
-    // role updation
-     if(updates.role){
-            // don't allow a user/seller to change their role to 'admin'
-            if(updates.role === 'admin' && !updates.byAdmin)
-                return next(
-            new CustomError('BadRequestError', 'You cannot change your role to admin!', 400))
-    
-            else{
-                // set MongoDB operator 
-             if(!updates.$addToSet)
-                updates.$addToSet = {};
-
-             // push new role
-                updates.$addToSet.roles = updates.role;
-            }
-    
-        // delete custom fields
-        delete updates.role;
-        delete updates.byAdmin;
-        }
+    delete updates.byAdmin;
 
     next()   
 })
 
-// Create a model for the User schema
+// model for the User schema
 const UserModel = model('user', UserSchema);
 
 export default UserModel;
