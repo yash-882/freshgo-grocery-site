@@ -51,7 +51,6 @@ export const getProductBodyForDB = (productData, images, user) => {
     productDataDB = productData.map(product => ({
       ...product,
       price: Number(product.price), 
-      seller: user._id,  //current seller ID
       score: 0, // ensures user cannot set the score manually
 
       // each product has a uniquePrefix used for all its images.
@@ -73,7 +72,6 @@ export const getProductBodyForDB = (productData, images, user) => {
   // for a single product
   productDataDB = { 
     ...productData, 
-    seller: user._id,  //current seller ID
     price: Number(productData.price),
     images: images.map(image => image.path), //returns URLs
     score: 0, // ensures user cannot set the score manually

@@ -1,5 +1,21 @@
-import { Schema, model } from 'mongoose';
+import mongoose, { Schema, model } from 'mongoose';
 import productCategories from '../constants/productCategories.js';
+
+// Part of product schema field
+const warehouse = new Schema({
+    warehouse: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'warehouse',
+        required: [true, 'Warehouse ID is required'],
+        trim: true,
+        lowercase: true,
+    }, 
+    quantity: {
+        type: Number,
+        required: [true, 'Product quantity is required'],
+        min: [0, 'Quantity cannot be negative'],
+    }
+})
 
 // PRODUCT SCHEMA
 const ProductSchema = new Schema({
@@ -61,16 +77,6 @@ const ProductSchema = new Schema({
         minlength: [20, 'Min 20 characters are required for the description!'],
         maxlength: [500, 'Max 500 characters are allowed for the description!'],
     },
-    inStock: {
-        type: Boolean,
-        default: true,
-    },
-    quantity: {
-        type: Number,
-        required: true,
-        min: 0,
-        default: 1,
-    },
 
     // popularity score (increments each time the product is ordered or added to the cart)
     score: {
@@ -100,12 +106,12 @@ const ProductSchema = new Schema({
             message: () => 'Images (1-5 required)'
         }
     },
-    seller: {
-        type: Schema.Types.ObjectId,
-        ref: 'user',
-        immutable: true,
-        required: [true, 'Seller is required'],
-        select: false
+
+    // for maintaining quanitity of products for each warehouse
+    warehouses: {
+        type: [warehouse],
+        default: [],
+        required: [true, 'Warehouses are required for the product'],
     },
 
     createdAt: {
@@ -126,17 +132,6 @@ ProductSchema.index({
     category: "text"
 })
 
-// pre hook
-ProductSchema.pre('save', function (next) {
-
-    // update stock when no quantity available
-    if (this.quantity <= 0) {
-        this.quantity = 0;
-        this.inStock = false;
-    }
-
-    next()
-})
 
 const ProductModel = model('product', ProductSchema);
 
