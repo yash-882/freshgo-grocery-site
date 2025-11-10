@@ -9,6 +9,7 @@ import userRouter from './routes/user.js';
 import orderRouter from './routes/order.js';
 import adminRouter from './routes/admin/adminGateway.js';
 import categoryRouter from './routes/productCategory.js';
+import productRouterManager from './routes/manager/product.js';
 
 // auth strategies
 import googleAuth from './auth-strategies/googleAuth.js';
@@ -24,14 +25,13 @@ import qs from 'qs';
 
 // congfigs
 import setCors from './configs/cors.js';
+import warehouseRouter from './routes/manager/warehouse.js';
 
 // allow requests from the specified client origin and include credentials (like cookies) 
 app.use(setCors())
 
 // parses query strings ("?price[gt]=20&sort=-price" -> {price: {gt: "20"}, sort="-price"})
-app.set("query parser", (query)=> {
-    return qs.parse(query)
-})
+app.set("query parser", query => qs.parse(query))
 
 // parse JSON data
 app.use(express.json())
@@ -65,6 +65,9 @@ app.use('/api/admin', adminRouter)
 // user router (authenticated-only)
 app.use('/api/user', userRouter)
 
+// product router (warehouse_manager)
+app.use('/api/product/manager', productRouterManager)
+
 // product router (public)
 app.use('/api/product', productRouter)
 
@@ -77,13 +80,12 @@ app.use('/api/order', orderRouter)
 // Categories with their subcategories for the frontend to display
 app.use('/api/category', categoryRouter)
 
+// warehouse_manager
+app.use('/api/warehouse', warehouseRouter)
+
 
 // NOT-FOUND MIDDLEWARE (executes when no route above matches the path)
-app.use((req, res, next) => {
-
-    next(new CustomError('NotFoundError', 'Route not found!', 404))
-
-})
+app.use((req, res, next) => next(new CustomError('NotFoundError', 'Route not found!', 404)))
 
 // global error handler middleware
 app.use(GlobalErrorHandler)

@@ -6,6 +6,7 @@ import queueRouter from './queue.js';
 import orderRouter from './order.js';
 import productRouter from './product.js';
 import userRouter from './user.js';
+import warehouseRouter from './warehouse.js';
 const adminRouter = Router();
 
 
@@ -16,5 +17,6 @@ adminRouter.use('/product', productRouter) //product
 adminRouter.use('/user', userRouter) //user
 adminRouter.use('/queue', queueRouter) //queue
 adminRouter.use('/order', orderRouter) //order
+adminRouter.use('/warehouse', warehouseRouter) //order
 
 export default adminRouter;
