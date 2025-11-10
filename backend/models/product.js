@@ -1,5 +1,6 @@
 import mongoose, { Schema, model } from 'mongoose';
 import productCategories from '../constants/productCategories.js';
+import CustomError from '../error-handling/customError.js';
 
 // Part of product schema field
 const warehouse = new Schema({
@@ -131,6 +132,38 @@ ProductSchema.index({
     tags: "text",
     category: "text"
 })
+
+ProductSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], 
+    async function(next) {
+        const updates = this.getUpdate(); //changes for updation
+
+        const forbiddenFields = []
+        const allowedForUpdation = ['warehouses']
+
+        // check forbidden fields 
+        for (const operator of ['$set', '$pull', '$push', '$inc']) {
+            if (updates[operator]) {
+                const keys = Object.keys(updates[operator]);
+                keys.forEach(key => {
+                    if (!allowedForUpdation.includes(key)) {
+                        forbiddenFields.push(key);
+                    }
+                });
+            }
+        }
+
+        if (!updates.byAdmin && forbiddenFields.length > 0) {
+            return next(
+                new CustomError('ForbiddenError',
+                    `You are not allowed to update: ${forbiddenFields.join(', ')}`, 403)
+            );
+        }
+
+        // optionally clean helper flag
+        delete updates.byAdmin;
+
+next();
+    })
 
 
 const ProductModel = model('product', ProductSchema);
