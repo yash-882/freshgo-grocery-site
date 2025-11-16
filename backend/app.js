@@ -26,6 +26,7 @@ import qs from 'qs';
 // congfigs
 import setCors from './configs/cors.js';
 import warehouseRouter from './routes/manager/warehouse.js';
+import { findNearbyWarehouse } from './middlewares/findNearbyWarehouse.js';
 
 // allow requests from the specified client origin and include credentials (like cookies) 
 app.use(setCors())
@@ -39,9 +40,9 @@ app.use(express.json())
 
 // handle empty body for PUT, POST, PATCH requests
 app.use((req, res, next) => {
-    const methodsWithBody = ['POST', 'PUT', 'PATCH']
+    const methodsWithBody = new Set(['POST', 'PUT', 'PATCH'])
 
-    if(methodsWithBody.includes(req.method.toUpperCase()) && !req.body) 
+    if(methodsWithBody.has(req.method.toUpperCase()) && !req.body) 
         req.body = {}
 
     next()
@@ -65,14 +66,17 @@ app.use('/api/admin', adminRouter)
 // user router (authenticated-only)
 app.use('/api/user', userRouter)
 
+// find nearby warehouse 
+app.use(findNearbyWarehouse)
+
 // product router (warehouse_manager)
 app.use('/api/product/manager', productRouterManager)
 
-// product router (public)
-app.use('/api/product', productRouter)
-
 // cart router (authenticated-only)
 app.use('/api/cart', cartRouter)
+
+// product router (public)
+app.use('/api/product', productRouter)
 
 // order router (authenticated-only)
 app.use('/api/order', orderRouter)

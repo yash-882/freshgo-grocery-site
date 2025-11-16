@@ -28,8 +28,7 @@ export const  schemaRegistery = {
 
     // selectable fields
     selectableFields: schemaFieldHelpers
-    .getSelectableFields(OrderModel.schema.paths, 
-      ['paymentStatus', 'user', 'shippingAddress', 'totalAmount'])
+    .getSelectableFields(OrderModel.schema.paths, ['user', 'products'])
   },
 
   // used by Admin only 

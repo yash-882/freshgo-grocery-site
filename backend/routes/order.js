@@ -16,7 +16,10 @@ orderRouter.use(authorizeUser)
 
 orderRouter.route('/')
 .post(createOrder) //create order
-.get(handleQuery(schemaRegistery.order), getOrders) //get recent orders
+    .get(
+        handleQuery(schemaRegistery.order),
+        getOrders
+    ) //get recent orders
 
 orderRouter.route('/cancel/:id')
 .patch(cancelOrder) //cancel order

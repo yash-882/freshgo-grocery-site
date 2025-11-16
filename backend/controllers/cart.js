@@ -6,40 +6,37 @@ import controllerWrapper from '../utils/controllerWrapper.js';
 import sendApiResponse from '../utils/apiResponse.js';
 import ProductModel from '../models/product.js';
 import { getCartSummary, populateCart, validateStock } from '../utils/helpers/cart.js';
+import WarehouseModel from '../models/warehouse.js';
 
 // get user's cart
 export const getCart = controllerWrapper(async (req, res, next) => {
-    const userID = req.user.id;
+    const user = req.user;
 
     // get current user's cart with products
-    let cart = await populateCart(userID);
+    let cart = await populateCart(user, req.nearbyWarehouse);
 
-    // cart not found
+    // create cart for user 
     if (!cart) {
-        cart = new CartModel({ user: userID, products: [] });
-        await cart.save() //create new cart for user
+        console.log('cart does not exist');
+        
+        cart = new CartModel({ user: user._id, products: [] });
+        await cart.save() 
+
+        return sendApiResponse(res, 200, {
+            data: {
+                cart,
+                cartSummary: getCartSummary(cart.products)
+            },
+            message: "No items in your cart yet",
+        });
     }
-
-    let shouldSave = false;
-
-    cart.products.forEach((item, index) => {
-
-        // adjust quantities if they exceed stock
-        if (item.product.quantity < item.quantity) {
-            cart.products[index].quantity = item.product.quantity
-            shouldSave = true
-        }
-    })
-
-    shouldSave && await cart.save()
 
     sendApiResponse(res, 200, {
         data: {
             cart,
-            cartSummary: getCartSummary(cart?.products)
+            cartSummary: getCartSummary(cart.products)
         },
         message: cart.products.length === 0 ? "No items in your cart yet" : undefined,
-
     });
 });
 
@@ -74,7 +71,7 @@ export const addToCart = controllerWrapper(async (req, res, next) => {
     if (itemIndex !== -1) {
         const totalQuantity = cart.products[itemIndex].quantity + quantity;
         //throws error if requestedQuantity exceeds available product quantity
-      validateStock( product, totalQuantity)
+      validateStock( product, totalQuantity, req.nearbyWarehouse)
 
         // add up more quantity to the existing product
         cart.products[itemIndex].quantity += quantity;
@@ -83,7 +80,7 @@ export const addToCart = controllerWrapper(async (req, res, next) => {
     else{
 
     //throws error if requestedQuantity exceeds available product quantity
-    validateStock( product, quantity)
+    validateStock( product, quantity, req.nearbyWarehouse)
 
     // add new product to cart
     cart.products.push({ product: productID, quantity });
@@ -163,9 +160,17 @@ export const updateCartItemQuantity = controllerWrapper(async (req, res, next) =
         return next(new CustomError('BadRequestError', 'Invalid operation!', 400));
 
     // product is not found
-    const product = await ProductModel.findById(productID);
+    const product = await ProductModel.findOne({
+        _id: productID,
+        warehouses: { $elemMatch: { warehouse: req.nearbyWarehouse._id } }
+    }).select('warehouses');
+
     if (!product)
         return next(new CustomError('NotFoundError', 'Product not found!', 404));
+
+    if (operation === 'inc') {
+        validateStock(product, 1, req.nearbyWarehouse)
+    }
 
     // first query: increment/decrement the quantity
     const updatedCart = await CartModel.findOneAndUpdate(
@@ -174,7 +179,6 @@ export const updateCartItemQuantity = controllerWrapper(async (req, res, next) =
             products: {
                 $elemMatch: {
                     product: productID,
-                    quantity: operation === 'inc' ? { $lt: product.quantity } : { $gt: 0 }
                 }
             }
         },

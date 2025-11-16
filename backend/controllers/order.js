@@ -18,7 +18,7 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
     const { addressID, cashOnDelivery } = req.body;
     const user = req.user;
 
-    const cart = await populateCart(user._id);
+    const cart = await populateCart(user, req.nearbyWarehouse);
 
     if (!cart || cart.products.length === 0) {
         return next(new CustomError(
@@ -67,9 +67,9 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
                         paymentMethod: 'cash_on_delivery',
                         orderStatus: 'placed',
                         products: cart.products.map(item => ({
-                            product: item.product._id,
-                            quantity: item.quantity,
-                            priceAtPurchase: item.product.price,
+                            product: item.productDetails._id,
+                            quantity: item.requestedQuantity,
+                            priceAtPurchase: item.productDetails.price,
                         })),
                         totalAmount: grandTotal
                     }],
@@ -77,21 +77,27 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
                 )
             )[0];
 
+
+
             // update product stock
             const productsUpdates = cart.products.map(item => ({
                 updateOne: {
+                    // ensures enough stock
                     filter: {
-                        _id: item.product,
-                        quantity: { $gte: item.quantity } // ensures enough stock
-                    },
-                    update: [
-                        {
-                            $set: {
-                                quantity: { $subtract: ["$quantity", item.quantity] },
-                                inStock: { $gt: [{ $subtract: ["$quantity", item.quantity] }, 0] }
+                        _id: item.productDetails._id,
+                        warehouses: {
+                            $elemMatch: {
+                                warehouse: req.nearbyWarehouse._id,
+                                quantity: { $gte: item.requestedQuantity }
                             }
+                        } 
+                    },
+                    update: {
+                            $inc: {
+                                'warehouses.$.quantity': -item.requestedQuantity, 
+                            }
+                        
                         }
-                    ]
                 }
             }));
 
@@ -115,7 +121,7 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
             // begin order flow ('processing' to 'delivered')
             await startOrderProcessing({
                 orderID: newOrder._id, 
-                productsName: cart.products.map(item => item.product.name),
+                productsName: cart.products.map(item => item.productDetails.name),
                 email: user.email,
                 createdAt: newOrder.createdAt
             })
@@ -141,12 +147,13 @@ export const getOrders = controllerWrapper(async (req, res, next) => {
     const orders = await OrderModel.find({...filter, user: user._id }).populate({
         path: 'products.product',
         model: 'product',
-        select: 'name price category'
+        select: 'name price images'
     })
     .sort(sort)
     .limit(limit)
     .skip(skip)
     .select(select);
+
     
     // sort orders by status (out_for_delivery > placed > pending > cancelled)
     const statusOrder = {
@@ -293,12 +300,14 @@ export const confirmDelivery = controllerWrapper(async (req, res, next) => {
             if (isAccepted === 'false') {
                 // deny order
                 order.orderStatus = 'cancelled';
-                await updateProductsOnCancellation(order.products)
+                order.paymentStatus = 'refunded';
+                await updateProductsOnCancellation(order.products, req.nearbyWarehouse)
                 
             } else {
                 // accept order
                 order.orderStatus = 'delivered';
                 await updateProductsOnDelivery(order.products)
+                order.paymentStatus = 'paid';
             }
 
             await order.save({ session });

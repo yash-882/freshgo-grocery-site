@@ -28,7 +28,7 @@ export const addEmailToQueue = async (to, subject, text) => {
 };
 
 // a worker to process jobs from the email queue
-new Worker('emailQueue', async (job) => {
+new Worker('emails', async (job) => {
     const { to, subject, text } = job.data;
     console.log(`Processing email job for ${to}`);
     try {

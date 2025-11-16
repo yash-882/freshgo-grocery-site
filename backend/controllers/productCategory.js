@@ -12,7 +12,8 @@ export const getCategories = controllerWrapper(async (req, res, next) => {
 
     if(categories.length > 0){
         const uniqueID = cacheKeyBuilders.publicResources(req.originalUrl)
-        await storeCachedData(uniqueID, {data: categories, ttl: 600}, 'category')
+        // for 2 hrs
+        await storeCachedData(uniqueID, {data: categories, ttl: 9000}, 'category')
     }
 
     sendApiResponse(res, 200, {

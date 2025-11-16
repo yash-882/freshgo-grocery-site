@@ -130,11 +130,9 @@ export const deleteUserByID = async (req, res, next) => {
                 throw new CustomError('NotFoundError', `User with ID: ${userID} not found for deletion`, 404)
             }
 
-            // only delete products if the user is 'Seller'
-            if(user.roles.includes('seller')){
+            // delete user cart
+            await CartModel.findOneAndDelete({user: userID}).session(session)
 
-                await ProductModel.deleteMany({seller: user._id}).session(session)
-            }
 
         })
 
@@ -190,8 +188,6 @@ export const deleteUsers = async (req, res, next) => {
               // get IDs of all found users
               const usersIDs = usersToDelete.map(user => user._id)
               
-              // deleting products of users...
-              await ProductModel.deleteMany({seller: {$in: usersIDs}}).session(session)
 
             //   deleting users cart
               await CartModel.deleteMany({user: {$in: usersIDs}}).session(session)

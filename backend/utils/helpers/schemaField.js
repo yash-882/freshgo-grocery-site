@@ -30,6 +30,6 @@ export const schemaFieldHelpers = {
     const selectableFields = Object.keys(schemaPaths)
     .filter(f => !nonSelectableFields.includes(f));
 
-    return new Set(selectableFields) // fields except '__v', 'seller', 'score'
+    return new Set(selectableFields)
   }
 };

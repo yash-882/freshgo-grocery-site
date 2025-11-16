@@ -13,23 +13,29 @@ export const updateProductsOnDelivery = async products => {
             // increase score
             $inc: {
                 score: 1,
-            }
+            },
+            byAdmin: true,
         }
     );
 };
 
 // updates cancelled products
-export const updateProductsOnCancellation = async products => {
+export const updateProductsOnCancellation = async (products, nearbyWarehouse) => {
     const operations = products.map(item => ({
         updateOne: {
-            filter: { _id: new mongoose.Types.ObjectId(item.product._id) },
+            filter: { 
+              _id: new mongoose.Types.ObjectId(item.product._id),
+              warehouses: {
+                $elemMatch: {
+                  warehouse: new mongoose.Types.ObjectId(nearbyWarehouse._id),
+                }
+              }
+            },
             update: {
-                // restore quantity
-                $set: {
-                    inStock: true
-                },
+
                 $inc: {
-                    quantity: item.quantity,
+                    'warehouses.$.quantity': item.quantity,
+                    byAdmin: true
                 }
             }
         }
@@ -47,7 +53,7 @@ export const getProductBodyForDB = (productData, images, user) => {
     // for multiple products
   if(Array.isArray(productData)){
 
-    // adding seller ID and score to each product
+    // adding score, image URLs to each product
     productDataDB = productData.map(product => ({
       ...product,
       price: Number(product.price), 
@@ -87,7 +93,7 @@ return productDataDB;
 }
 
 
-// limits seller from creating products more than the specified limit
+// limits admin from creating products more than the specified limit
 export const limitProductCreation = (productData) => {
   const BULK_CREATION_LIMIT = Number(process.env.BULK_CREATION_LIMIT_PER_REQUEST);
 

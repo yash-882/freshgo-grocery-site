@@ -172,6 +172,7 @@ createSelectFields(isAdmin) {
     if (!this.select) return;
 
     const fields = this.select.split(',')
+
     
     // allow specific field access based on role
     const allowedFields = isAdmin
@@ -182,6 +183,8 @@ createSelectFields(isAdmin) {
     const selectedFields = [...new Set(fields)].filter(f => {
        return f.startsWith('-') ? allowedFields.has(f.slice(1)) : allowedFields.has(f);
     })
+
+    if(selectedFields.length === 0) return
 
     // build object for Mongoose .select({ field1: 1, field2: 1 })
     let selectParams = {};

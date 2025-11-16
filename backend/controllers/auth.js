@@ -558,11 +558,6 @@ export const deleteMyAccount = controllerWrapper(async (req, res, next) => {
                 throw new CustomError('NotFoundError', `User not found for deletion`, 404)
             }
 
-            // only delete products if the user is 'Seller'
-            if(user.roles.includes('seller')){
-                await ProductModel.deleteMany({seller: user._id}).session(session)
-            }
-
             // delete user's cart
             await CartModel.findOneAndDelete({user: userID}).session(session)
         })

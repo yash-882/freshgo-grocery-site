@@ -29,7 +29,8 @@ const insertWarehouses = async () => {
             city: 'Delhi',
             state: 'Delhi',
             pinCode: '110001',
-            manager: null
+            manager: new mongoose.Types.ObjectId("68c42f02b21115ce741dfb85")
+
         },
         {
             location: {

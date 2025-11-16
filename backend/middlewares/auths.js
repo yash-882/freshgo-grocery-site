@@ -6,6 +6,7 @@ import {
     signRefreshToken, 
     verifyRefreshToken, 
     verifyAccessToken } from "../utils/helpers/jwt.js"
+import mongoose from "mongoose"
 
 signRefreshToken
 

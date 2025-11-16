@@ -6,10 +6,11 @@ import controllerWrapper from '../utils/controllerWrapper.js';
 import sendApiResponse from '../utils/apiResponse.js';
 import { storeCachedData } from '../utils/helpers/cache.js';
 import cacheKeyBuilders from '../constants/cacheKeyBuilders.js';
+import mongoose from 'mongoose';
 
 // search products 
 export const searchProducts = controllerWrapper(async (req, res, next) => {
-  const { value, skip, limit, sort } = req.sanitizedQuery;
+  const { value, skip, limit, sort } = req.sanitizedQuery || {};
 
   // search value is required
   if (!value) {
@@ -34,19 +35,52 @@ export const searchProducts = controllerWrapper(async (req, res, next) => {
 // get multiple products (public route)
 export const getProducts = controllerWrapper(async (req, res, next) => {
 
-  const { filter, sort, limit, skip, select } = req.sanitizedQuery;
+  const { filter, sort, limit, skip } = req.sanitizedQuery || {};
+  
 
-  const products = await ProductModel.find(filter)
-    .sort(sort)
-    .skip(skip)
-    .limit(limit)
-    .select(select)
-    .populate({
-      //get also the seller of product
-      path: 'warehouses.warehouse', //a field of Product schema that stores user ID
-      select: 'name -_id', //only include 'name' and exclude '_id'
-      model: 'user' // name of the referenced model
-    });
+const products = await ProductModel.aggregate([
+  { 
+    $match: { 
+      ...filter,
+      "warehouses.warehouse": req.nearbyWarehouse._id 
+    } 
+  },
+  // get the products available in the nearby warehouse
+  {
+    $addFields: {
+      matchedWarehouse: {
+        $first: {
+          $filter: {
+            input: "$warehouses",
+            as: "w",
+            cond: { $eq: ["$$w.warehouse", req.nearbyWarehouse._id] }
+          }
+        }
+      }
+    }
+  },
+
+  // add the product quantity available in the warehouse
+  {
+    $addFields: {
+      quantity: "$matchedWarehouse.quantity"
+    }
+  },
+  {
+    $project: {
+      warehouses: 0,
+      matchedWarehouse: 0,
+      description: 0,
+      score: 0,
+      tags: 0,
+      __v: 0,
+      createdAt: 0,
+    }
+  },
+  { $sort: sort || { score : -1 }},
+  { $skip: skip || 0},
+  { $limit: limit || 12}
+]);
 
   let uniqueID;
 
@@ -74,16 +108,43 @@ export const getProducts = controllerWrapper(async (req, res, next) => {
 export const getProductByID = controllerWrapper(async (req, res, next) => {
   const productID = req.params.id;
 
-  const product = await ProductModel.findById(productID)
-    .populate({
-      //get also the seller of product
-      path: 'seller', //a field of Product schema that stores user ID
-      select: 'name -_id', //only include 'name' and exclude '_id'
-      model: 'user' // name of the referenced model
-    });
+  const product = await ProductModel.aggregate([
+    { 
+      $match: { 
+      _id: new mongoose.Types.ObjectId(productID), 
+      "warehouses.warehouse": req.nearbyWarehouse._id
+    } 
+  },
+  {
+    $addFields: {
+      matchedWarehouse: {
+        $first: {
+          $filter: {
+            input: "$warehouses",
+            as: "w",
+            cond: { $eq: ["$$w.warehouse", req.nearbyWarehouse._id] }
+          }
+        }
+      }
+    }
+  },
+  {
+    $addFields: {
+      quantity: "$matchedWarehouse.quantity"
+    }
+  },
+  {
+    $project: {
+      warehouses: 0,
+      matchedWarehouse: 0,
+      __v: 0,
+      createdAt: 0,
+    }
+  }
+  ])
 
   // product not found
-  if (!product) {
+  if (product.length === 0) {
     return next(new CustomError('NotFoundError', 'Product not found', 404));
   }
   //get unique ID ('<hash-of-query-string>')
@@ -100,6 +161,6 @@ export const getProductByID = controllerWrapper(async (req, res, next) => {
   await storeCachedData(uniqueID, { data: product, ttl: 250 }, 'product');
 
   sendApiResponse(res, 200, {
-    data: product,
+    data: product[0],
   })
 });
