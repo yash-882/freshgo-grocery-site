@@ -24,7 +24,7 @@ export const validateStock = (product, requestedQuantity = 1, nearbyWarehouse) =
     // not enough stock to add up more quantity
     else if (warehouse.quantity < requestedQuantity)
         throw new CustomError(
-            'BadRequestError', `Only ${product.quantity} units are available in stock!`, 400);
+            'BadRequestError', `Cannot add more than ${warehouse.quantity} units of this item.`, 400);
 }
 
 // get user cart with added products

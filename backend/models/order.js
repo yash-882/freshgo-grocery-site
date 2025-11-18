@@ -39,6 +39,11 @@ const OrderSchema = new Schema({
         ref: 'user',        
         required: [true, 'User ID is required'],
     },
+    warehouse: {
+        type: Schema.Types.ObjectId,
+        ref: 'warehouse',
+        required: [true, 'Warehouse ID is required']
+    },
     shippingAddress: {
         street: { 
             type: String, 

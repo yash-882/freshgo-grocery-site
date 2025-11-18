@@ -9,7 +9,9 @@ import { schemaRegistery } from '../constants/schemaRegistery.js';
 import { handleQuery } from '../middlewares/query.js';
 import { checkCachedData } from '../middlewares/cache.js';
 const productRouter = Router();
+import { findNearbyWarehouse } from '../middlewares/findNearbyWarehouse.js';
 
+productRouter.use(findNearbyWarehouse);
 
 // search products: public route
 productRouter.get('/search',

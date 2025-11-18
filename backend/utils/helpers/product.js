@@ -47,7 +47,7 @@ export const updateProductsOnCancellation = async (products, nearbyWarehouse) =>
 
 
 // creates data for single or multiple products
-export const getProductBodyForDB = (productData, images, user) => {
+export const getProductBodyForDB = (productData, images) => {
     let productDataDB;
 
     // for multiple products

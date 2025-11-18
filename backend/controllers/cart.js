@@ -6,7 +6,6 @@ import controllerWrapper from '../utils/controllerWrapper.js';
 import sendApiResponse from '../utils/apiResponse.js';
 import ProductModel from '../models/product.js';
 import { getCartSummary, populateCart, validateStock } from '../utils/helpers/cart.js';
-import WarehouseModel from '../models/warehouse.js';
 
 // get user's cart
 export const getCart = controllerWrapper(async (req, res, next) => {

@@ -71,6 +71,7 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
                             quantity: item.requestedQuantity,
                             priceAtPurchase: item.productDetails.price,
                         })),
+                        warehouse: req.nearbyWarehouse._id,
                         totalAmount: grandTotal
                     }],
                     { session }
@@ -248,7 +249,7 @@ export const cancelOrder = controllerWrapper(async (req, res, next) => {
             await orderToCancel.save({session});
 
             // update products (restore stock, etc)
-            await updateProductsOnCancellation(orderToCancel.products);
+            await updateProductsOnCancellation(orderToCancel.products, orderToCancel.warehouse);
 
         })
     }
@@ -301,7 +302,7 @@ export const confirmDelivery = controllerWrapper(async (req, res, next) => {
                 // deny order
                 order.orderStatus = 'cancelled';
                 order.paymentStatus = 'refunded';
-                await updateProductsOnCancellation(order.products, req.nearbyWarehouse)
+                await updateProductsOnCancellation(order.products, order.warehouse)
                 
             } else {
                 // accept order

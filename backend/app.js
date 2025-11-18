@@ -10,11 +10,12 @@ import orderRouter from './routes/order.js';
 import adminRouter from './routes/admin/adminGateway.js';
 import categoryRouter from './routes/productCategory.js';
 import productRouterManager from './routes/manager/product.js';
+import warehouseRouter from './routes/manager/warehouse.js';
 
 // auth strategies
 import googleAuth from './auth-strategies/googleAuth.js';
 
-// error custom module
+// custom module
 import GlobalErrorHandler from './middlewares/error.js';
 import CustomError from './error-handling/customError.js';
 
@@ -25,8 +26,6 @@ import qs from 'qs';
 
 // congfigs
 import setCors from './configs/cors.js';
-import warehouseRouter from './routes/manager/warehouse.js';
-import { findNearbyWarehouse } from './middlewares/findNearbyWarehouse.js';
 
 // allow requests from the specified client origin and include credentials (like cookies) 
 app.use(setCors())
@@ -57,41 +56,30 @@ app.use(passport.initialize())
 // google OAUTH2
 passport.use(googleAuth)
 
-// auth router
-app.use('/api/auth', authRouter)
+// Auth-related routes
+app.use('/api/auth', authRouter);
 
-// admin router (admin-only)
-app.use('/api/admin', adminRouter)
+// Admin-only routes
+app.use('/api/admin', adminRouter);
 
-// user router (authenticated-only)
-app.use('/api/user', userRouter)
+// Authenticated user routes
+app.use('/api/user', userRouter);
+app.use('/api/cart', cartRouter);
+app.use('/api/order', orderRouter);
 
-// find nearby warehouse 
-app.use(findNearbyWarehouse)
+// Product routes
+app.use('/api/product/manager', productRouterManager); // Warehouse manager
+app.use('/api/product', productRouter);                 // Public
 
-// product router (warehouse_manager)
-app.use('/api/product/manager', productRouterManager)
-
-// cart router (authenticated-only)
-app.use('/api/cart', cartRouter)
-
-// product router (public)
-app.use('/api/product', productRouter)
-
-// order router (authenticated-only)
-app.use('/api/order', orderRouter)
-
-// Categories with their subcategories for the frontend to display
-app.use('/api/category', categoryRouter)
-
-// warehouse_manager
-app.use('/api/warehouse', warehouseRouter)
+// Categories & warehouses
+app.use('/api/category', categoryRouter); //public
+app.use('/api/warehouse', warehouseRouter); //Warehouse manager
 
 
-// NOT-FOUND MIDDLEWARE (executes when no route above matches the path)
-app.use((req, res, next) => next(new CustomError('NotFoundError', 'Route not found!', 404)))
+// NOT-FOUND middleware: triggers when no route matches
+app.use((req, res, next) => next(new CustomError('NotFoundError', 'Route not found!', 404)));
 
-// global error handler middleware
-app.use(GlobalErrorHandler)
+// Global error handler
+app.use(GlobalErrorHandler);
 
 export default app;
