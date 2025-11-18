@@ -26,6 +26,7 @@ import qs from 'qs';
 
 // congfigs
 import setCors from './configs/cors.js';
+import { apiRoot, getApiRoutes } from './controllers/apiEntry.js';
 
 // allow requests from the specified client origin and include credentials (like cookies) 
 app.use(setCors())
@@ -55,6 +56,12 @@ app.use(passport.initialize())
 
 // google OAUTH2
 passport.use(googleAuth)
+
+// Root route
+app.get('/', apiRoot);
+
+// API landing route: lists available public and protected endpoints
+app.get('/api', getApiRoutes);
 
 // Auth-related routes
 app.use('/api/auth', authRouter);

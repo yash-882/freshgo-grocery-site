@@ -1,3 +1,10 @@
+// handle uncaught exceptions
+process.on('uncaughtException', err => {
+  console.error('Uncaught Exception! Shutting down...');
+  console.error(err.name, err.message);
+  process.exit(1);
+});
+
 import './configs/loadEnv.js' //load environment variables
 import mongoose from 'mongoose'
 import redisClient from './configs/redisClient.js'
