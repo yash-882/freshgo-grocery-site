@@ -7,7 +7,7 @@ import { hash } from 'bcrypt';
 export default new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: `http://localhost:${process.env.PORT || 8000}/api/auth/google/callback`,
+    callbackURL: `https://freshgo.onrender.com/api/auth/google/callback`,
     passReqToCallback: true,
 
 }, 
