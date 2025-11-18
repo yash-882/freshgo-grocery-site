@@ -1,4 +1,3 @@
-import e from "express";
 import prodErrorHandlers from "../constants/errorResponses.js";
 
 // OPERATIONAL_ERRORS helps identifying operational errors, 
@@ -18,6 +17,7 @@ const OPERATIONAL_ERRORS= new Map([
     ['NotFoundError', 404],  // Resource not found error
     ['ForbiddenError', 403], // Forbidden access error
     ['ConflictError', 409], //Duplicate data error
+    ['BSONError', 400], //Invalid ObjectId
 ])
 
 // returns error properties (name, message, etc) sent as a response
@@ -63,8 +63,8 @@ const GlobalErrorHandler = (err, req, res, next) => {
      // return detailed error response in development mode
     return res.status(errProps.statusCode).json(errProps)
 
-    // if environment is set to production
-    else if (process.env.NODE_ENV === 'production') {
+    // production error
+    else {
         const statusCode = errProps.statusCode;
 
         // get err message handler based on err type

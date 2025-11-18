@@ -59,7 +59,10 @@ const prodErrorHandlers = {
             default:
                 return 'Something went wrong with file upload!'
         }
-    }
+    },
+
+    // Invalid ObjectId
+    BSONError: err => 'Invalid ID provided in body or params'
 }
 
 export default prodErrorHandlers;
