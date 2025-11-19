@@ -5,6 +5,7 @@ import CustomError from '../../error-handling/customError.js';
 import sendApiResponse from '../../utils/apiResponse.js';
 import controllerWrapper from '../../utils/controllerWrapper.js';
 import mongoose from 'mongoose';
+import { storeCachedData } from '../../utils/helpers/cache.js';
 
 // Get my warehouse products (warehouse_manager)
 export const getMyWarehouseProducts = controllerWrapper(async (req, res, next) => {
@@ -24,6 +25,11 @@ export const getMyWarehouseProducts = controllerWrapper(async (req, res, next) =
       select: 'name -_id',
       model: 'warehouse',
     });
+
+    // store products in redis as cache
+    if (products.length > 0 && req.redisCacheKey)
+    await storeCachedData(req.redisCacheKey, { data: products, ttl: 600 }, 'product');
+
 
   sendApiResponse(res, 200, { data: products, dataLength: products.length });
 });

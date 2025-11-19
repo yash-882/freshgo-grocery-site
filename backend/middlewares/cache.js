@@ -25,7 +25,12 @@ export const checkCachedData = (resourceType,  isPvtResource=false) => {
     const cachedData = await getCachedData(queryOrID, resourceType)
 
 
-    if (!cachedData) return next();
+    if (!cachedData) {
+
+      req.redisCacheKey = queryOrID; //cache key
+      return next();
+
+    }
 
     // send cached response
     sendApiResponse(res, 200, {data: cachedData });

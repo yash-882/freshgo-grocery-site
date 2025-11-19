@@ -5,7 +5,6 @@ import ProductModel from '../models/product.js';
 import controllerWrapper from '../utils/controllerWrapper.js';
 import sendApiResponse from '../utils/apiResponse.js';
 import { storeCachedData } from '../utils/helpers/cache.js';
-import cacheKeyBuilders from '../constants/cacheKeyBuilders.js';
 import mongoose from 'mongoose';
 
 // search products 
@@ -23,9 +22,8 @@ export const searchProducts = controllerWrapper(async (req, res, next) => {
     .skip(skip)
     .limit(limit)
 
-  const uniqueID = cacheKeyBuilders.publicResources(req.sanitizedQuery);
   // store products in cache(Redis)
-  await storeCachedData(uniqueID, { data: searchedProducts }, 'product')
+  await storeCachedData(req.redisCacheKey, { data: searchedProducts }, 'product')
   sendApiResponse(res, 200, {
     data: searchedProducts,
 
@@ -36,8 +34,18 @@ export const searchProducts = controllerWrapper(async (req, res, next) => {
 export const getProducts = controllerWrapper(async (req, res, next) => {
 
   const { filter, sort, limit, skip } = req.sanitizedQuery || {};
-  
 
+  let quantity;
+
+  // handle query for quantity
+  if(filter.quantity){
+    quantity = filter.quantity;
+    delete filter.quantity; //remove from the original filter
+  } 
+  else{
+    quantity = { $gt: -1 } //default
+  }
+  
 const products = await ProductModel.aggregate([
   { 
     $match: { 
@@ -66,6 +74,12 @@ const products = await ProductModel.aggregate([
       quantity: "$matchedWarehouse.quantity"
     }
   },
+
+  // quantity available in the warehouse 
+  {
+    $match: { quantity }
+  },
+
   {
     $project: {
       warehouses: 0,
@@ -82,18 +96,10 @@ const products = await ProductModel.aggregate([
   { $limit: limit || 12}
 ]);
 
-  let uniqueID;
-
-  //get unique ID ('<hash-of-query-string>')
-  if (products.length > 0) {
-    if (req.user?.roles.includes('admin'))
-      uniqueID = cacheKeyBuilders.pvtResources(req.user.id, req.sanitizedQuery);
-
-    else
-      uniqueID = cacheKeyBuilders.publicResources(req.sanitizedQuery);
+  if (products.length > 0 && req.redisCacheKey) {
 
     // store products in cache(Redis)
-    await storeCachedData(uniqueID, { data: products, ttl: 600 }, 'product');
+    await storeCachedData(req.redisCacheKey, { data: products, ttl: 600 }, 'product');
   }
 
 
@@ -147,18 +153,10 @@ export const getProductByID = controllerWrapper(async (req, res, next) => {
   if (product.length === 0) {
     return next(new CustomError('NotFoundError', 'Product not found', 404));
   }
-  //get unique ID ('<hash-of-query-string>')
-
-  let uniqueID;
-
-  if (req.user?.roles.includes('admin'))
-    uniqueID = cacheKeyBuilders.pvtResources(req.user.id, productID);
-
-  else
-    uniqueID = cacheKeyBuilders.publicResources(productID);
 
   // store the product in cache(Redis)
-  await storeCachedData(uniqueID, { data: product, ttl: 250 }, 'product');
+  if (req.redisCacheKey)
+  await storeCachedData(req.redisCacheKey, { data: product, ttl: 250 }, 'product');
 
   sendApiResponse(res, 200, {
     data: product[0],

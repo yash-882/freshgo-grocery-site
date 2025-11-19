@@ -9,14 +9,14 @@ export const  schemaRegistery = {
     // 'product' schema fields
   product: {
     // numeric fields
-    numericFields: schemaFieldHelpers.getNumericFields(ProductModel.schema.paths),
+    numericFields: schemaFieldHelpers.getNumericFields(ProductModel.schema.paths, ['quantity']),
 
     // all fields
     allFields: schemaFieldHelpers.getAllFields(ProductModel.schema.paths),
 
     // selectable fields
     selectableFields: schemaFieldHelpers
-    .getSelectableFields(ProductModel.schema.paths, ['score'])
+    .getSelectableFields(ProductModel.schema.paths, ['score'], ['quantity'])
   },
 
   order:{
