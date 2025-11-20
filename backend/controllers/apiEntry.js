@@ -11,8 +11,8 @@ export const getApiRoutes = (req, res, next) =>
     sendApiResponse(res, 200, {
         message: 'You can navigate through these routes.',
         data: {
-            publicRoutes: ['/api/product'],
-            protectedRoutes: ['/api/user', '/api/cart', '/api/order', '/api/admin'],
+            publicRoutes: ['/api/products'],
+            protectedRoutes: ['/api/users', '/api/carts', '/api/orders', '/api/admins'],
         }
     })
 

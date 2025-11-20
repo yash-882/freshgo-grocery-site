@@ -12,9 +12,10 @@ const adminRouter = Router();
 // apply authentication and admin check to all routes
 adminRouter.use(authorizeUser, roleBasedAccess('admin'));
 
-adminRouter.use('/product', productRouter) //product
-adminRouter.use('/user', userRouter) //user
-adminRouter.use('/order', orderRouter) //order
-adminRouter.use('/warehouse', warehouseRouter) //order
+adminRouter.use('/products', productRouter) //product
+adminRouter.use('/users', userRouter) //user
+adminRouter.use('/orders', orderRouter) //order
+adminRouter.use('/warehouses', warehouseRouter) //order
+
 
 export default adminRouter;

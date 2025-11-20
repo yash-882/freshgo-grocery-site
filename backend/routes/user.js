@@ -25,10 +25,10 @@ userRouter.route('/me')
 // CRUD for user's address
 
 // add new address
-userRouter.route('/me/address')
+userRouter.route('/me/addresses')
 .post(addAddress) //add address
 
-userRouter.route('/me/address/:id')
+userRouter.route('/me/addresses/:id')
 .patch(updateAddressByID) //update address
 .delete(deleteAddressByID) //delete
 

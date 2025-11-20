@@ -37,6 +37,18 @@ app.set("query parser", query => qs.parse(query))
 // parse JSON data
 app.use(express.json())
 
+import rateLimit from 'express-rate-limit';
+
+// rate limiter
+app.use(rateLimit({
+    windowMs: 1000 * 60, // 1 minute
+    max: 40, // limit each IP to 40 requests per windowMs
+    handler: (req, res, next) =>
+        next(new CustomError(
+            'TooManyRequestsError',
+            'Too many requests, please try again later.',
+            429))
+}));
 
 // handle empty body for PUT, POST, PATCH requests
 app.use((req, res, next) => {
@@ -70,17 +82,17 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 
 // Authenticated user routes
-app.use('/api/user', userRouter);
-app.use('/api/cart', cartRouter);
-app.use('/api/order', orderRouter);
+app.use('/api/users', userRouter);
+app.use('/api/carts', cartRouter);
+app.use('/api/orders', orderRouter);
 
 // Product routes
-app.use('/api/product/manager', productRouterManager); // Warehouse manager
-app.use('/api/product', productRouter);                 // Public
+app.use('/api/products/manager', productRouterManager); // Warehouse manager
+app.use('/api/products', productRouter);                 // Public
 
 // Categories & warehouses
-app.use('/api/category', categoryRouter); //public
-app.use('/api/warehouse', warehouseRouter); //Warehouse manager
+app.use('/api/product-categories', categoryRouter); //public
+app.use('/api/warehouses', warehouseRouter); //Warehouse manager
 
 
 // NOT-FOUND middleware: triggers when no route matches
