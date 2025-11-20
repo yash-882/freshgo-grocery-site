@@ -3,12 +3,11 @@ import { findUserByQuery, bcryptCompare } from "../utils/helpers/auth.js"
 import CustomError from "../error-handling/customError.js"
 import { 
     signAccessToken, 
-    signRefreshToken, 
     verifyRefreshToken, 
     verifyAccessToken } from "../utils/helpers/jwt.js"
-import mongoose from "mongoose"
-
-signRefreshToken
+import { getCachedData, storeCachedData } from "../utils/helpers/cache.js"
+import cacheKeyBuilders from "../constants/cacheKeyBuilders.js"
+import UserModel from "../models/user.js"
 
 // verify password middleware
 export const verifyPassword = controllerWrapper(async (req, res, next) => {
@@ -51,50 +50,18 @@ export const roleBasedAccess = (role) => {
 // validate fields (checks for required field)
 // returns an async handler for express
 
-export const checkRequiredFields = (requiredFields='no-fields') => {
+export const checkRequiredFields = (requiredFields=[]) => {
 
     return (req, res, next) => {
-        const enteredFields = req.body;
+        const enteredFields = Object.keys(req.body);
+        const missingField = requiredFields.some(field => !enteredFields.includes(field))
 
-        // if body is empty
-        if(Object.keys(enteredFields).length === 0)
-          return next(
-        new CustomError("BadRequestError", 'Please enter all required fields!', 400));
-
-        // if only one field is required
-        if(!Array.isArray(requiredFields)){
-            
-            // required field is not present in enteredFields
-            if(!enteredFields[requiredFields.field])
-                return next(new CustomError("BadRequestError", `${requiredFields.label} is required!`, 400  ))
-
-            // field is present, jump to next handler
-            return next()
+        if (enteredFields.length === 0 || missingField) {
+            return next(
+                new CustomError('BadRequestError',
+                    `Please input all the required fields: ${requiredFields.join(', ')}`,
+                    400))
         }
-
-
-        // looping over required fields
-        for(const {field: requiredField, label} of requiredFields){
-        
-        // checks if the required field is present in entered fields
-        const field = enteredFields[requiredField]
-
-        // prioritize boolean or number (because 0 or false is considered falsy)
-        if(typeof field === 'boolean' || typeof field === 'number')
-            continue; //valid field, jump to next field
-
-        // field is missing
-        const isMissing = field === undefined || field === null
-        
-        // string is empty
-        const isEmptyString = typeof field === 'string' && !field.trim().length
-        
-        if(isMissing || isEmptyString){
-
-            const errMessage = `${label} is required!`
-            return next(new CustomError("BadRequestError", errMessage, 400));
-        }  
-    }
 
     // all required fields are present, jump to next handler
     next()
@@ -117,6 +84,24 @@ export const authorizeUser = controllerWrapper(async (req, res, next) => {
     if(noTokens && reqForAuth)
         return next(); 
 
+    // find and set user in req.user
+    const getAndSetUser = async (id) => {
+        const cacheKey = cacheKeyBuilders.pvtResources(id)
+        const cachedProfile = await getCachedData(cacheKey, 'profile')
+
+        if (!cachedProfile) {
+            req.user = await findUserByQuery({ _id: id }, true, 'Account may have been deleted!');
+
+            // store in cache
+            await storeCachedData(cacheKey, { data: req.user, ttl: 300 }, 'profile')
+        }
+
+        else {
+            // converts the plain object to a mongoose document
+            req.user = UserModel.hydrate(cachedProfile)
+        }
+    }
+
 
     // verify access token, doesn't throw error on expiration
     const result = accessToken 
@@ -131,17 +116,16 @@ export const authorizeUser = controllerWrapper(async (req, res, next) => {
         // check for refresh token
         if(!refreshToken)
             return next(
-    new CustomError('UnauthorizedError', 'You are not logged in!', 401));
+    new CustomError('UnauthorizedError', 'Login is required to access this route!', 401));
 
 
     // verify refresh token, throws error if the token is invalid/expired
     const decoded = verifyRefreshToken(refreshToken);
 
-    //throws error if user is not found
-    user = await findUserByQuery({_id: decoded.id}, true, 'Account may have been deleted!');
+    await getAndSetUser(decoded.id) //sets req.user from cache or DB, throws err if not found
 
     // sign new access token
-    const newToken = signAccessToken({id: user._id, roles: user.roles})
+    const newToken = signAccessToken({id: req.user._id, roles: req.user.roles})
     
     // parseInt stops parsing when 'd'(stands for days) is triggered,
     // and returns numbers of days in Number datatype
@@ -157,8 +141,7 @@ export const authorizeUser = controllerWrapper(async (req, res, next) => {
 }
 
 else{
-    //throws error if user is not found
-    user = await findUserByQuery({_id: result.decoded?.id}, true, 'Account may have been deleted!');
+    await getAndSetUser(result.decoded?.id) //sets req.user from cache or DB, throws err if not found
 }
 
 // at this point, user is found and access token is valid
@@ -170,7 +153,6 @@ if(reqForAuth) {
     })
 }
 
-req.user = user; // attach user to the request object
 next() //continue to the next middleware/controller
 
 })

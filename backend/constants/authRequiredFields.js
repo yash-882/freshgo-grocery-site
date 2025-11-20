@@ -1,57 +1,53 @@
 // fields required in specific routes of /auth
-// each key represents an route handler that contains required field(s) as a value
+// each key represents a route handler that contains required field(s) as a value
 export const authRequiredFields = {
     signUp: [
-        // fields
-        { field: 'email', label: 'Email' },
-        { field: 'OTP', label: 'OTP' }
+        'email', 
+        'OTP'
     ],
 
     validateForSignUp: [
-        // fields
-        { field: 'name', label: 'Name' },
-        { field: 'password', label: 'Password' },
-        { field: 'email', label: 'Email' },
-        { field: 'confirmPassword', label: 'Password confirmation' },
+        'name', 
+        'password', 
+        'email', 
+        'confirmPassword'
     ],
-    resetPassword: 
-        // fields
-        { field: 'email', label: 'Email' }
-    ,
+
+    resetPassword: ['email'],
+
     login: [
-        // fields
-        { field: 'email', label: 'Email' },
-        { field: 'password', label: 'Password' }
+        'email', 
+        'password'
     ],
+
     changePassword: [
-        // fields
-        { field: 'currentPassword', label: 'Current password' },
-        { field: 'newPassword', label: 'New password' },
-        { field: 'confirmNewPassword', label: 'New password confirmation' },
+        'currentPassword', 
+        'newPassword', 
+        'confirmNewPassword'
     ],
+
     submitNewPassword: [
-        // fields
-        { field: 'email', label: 'Email' },
-        { field: 'confirmNewPassword', label: 'New password confirmation' },
-        { field: 'newPassword', label: 'New password' },
+        'email',
+        'confirmNewPassword',
+        'newPassword'
     ],
+
     requestEmailChange: [
-        // fields
-        { field: 'email', label: 'Email' },
-        { field: 'confirmNewPassword', label: 'New password confirmation' },
-        { field: 'newPassword', label: 'New password' },
+        'email',
+        'confirmNewPassword',
+        'newPassword'
     ],
-    changeEmailWithOTP: 
-        // fields
-        { field: 'OTP', label: 'OTP' }
-    ,
+
+    changeEmailWithOTP: [
+        'OTP'
+    ],
+
     verifyPasswordResetOTP: [
-        // fields
-        { field: 'email', label: 'Email' },
-        { field: 'OTP', label: 'OTP' }
+        'email',
+        'OTP'
     ],
 
-    // fields 
-    verifyPassword: {field: 'password', label: 'Password'},
-
+    verifyPassword: [
+        'password'
+    ]
 }

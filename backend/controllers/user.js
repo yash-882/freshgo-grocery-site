@@ -4,6 +4,8 @@ import UserModel from "../models/user.js";
 import CustomError from "../error-handling/customError.js";
 import controllerWrapper from "../utils/controllerWrapper.js";
 import sendApiResponse from "../utils/apiResponse.js";
+import { deleteCachedData } from "../utils/helpers/cache.js";
+import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
 
 // ------------------------------------------------------------------------------------
 // handlers for the current user (Deletion and creation is present in /auth)
@@ -28,6 +30,9 @@ export const updateMyProfile = controllerWrapper(async (req, res, next) => {
         return next(new CustomError('NotFoundError', 'Account may have been deleted', 404));
     }
 
+    // delete the user in cache
+    await deleteCachedData(cacheKeyBuilders.pvtResources(user._id), 'profile')
+
     // profile updated successfully
     sendApiResponse(res, 200, {
         data: user, //updated profile
@@ -42,6 +47,8 @@ export const getMyProfile = controllerWrapper(async (req, res, next) => {
   if (!req.user) {
     return next(new CustomError("UnauthorizedError", "Not authenticated!", 401));
   }
+
+  req.user.password = undefined; //remove password
   
   // send user profile
   sendApiResponse(res, 200, {
@@ -82,6 +89,9 @@ export const updateAddressByID = controllerWrapper(async (req, res, next) => {
     // save user
     await user.save()
 
+    // delete the user in cache
+    await deleteCachedData(cacheKeyBuilders.pvtResources(user._id), 'profile')
+
     sendApiResponse(res, 200, {
         data: user.addresses, // return the updated address
         message: 'Address updated successfully',
@@ -104,6 +114,9 @@ export const addAddress = controllerWrapper(async (req, res, next) => {
 
     // save user
     await user.save()
+
+    // delete the user in cache
+    await deleteCachedData(cacheKeyBuilders.pvtResources(user._id), 'profile')
     
     sendApiResponse(res, 201, {
         data: user.addresses, // return the updated address field
@@ -141,6 +154,9 @@ export const deleteAddressByID = controllerWrapper(async (req, res, next) => {
 
     // save user
     await user.save()
+
+    // delete the user in cache
+    await deleteCachedData(cacheKeyBuilders.pvtResources(user._id), 'profile')
     
 
     sendApiResponse(res, 200, {

@@ -8,10 +8,11 @@ import client from "../configs/redisClient.js";
 import sendEmail from "../utils/mailer.js";
 import RedisService from "../utils/classes/redisService.js";
 import mongoose from "mongoose";
-import ProductModel from "../models/product.js";
 import sendApiResponse from "../utils/apiResponse.js";
 import CartModel from "../models/cart.js";
 import passport from "passport";
+import { deleteCachedData } from "../utils/helpers/cache.js";
+import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
 
 // signup user after OTP validation
 export const signUp = controllerWrapper(async (req, res, next) => {
@@ -280,6 +281,9 @@ export const changePassword = controllerWrapper(async (req, res, next) => {
     // save user document, pre-save hook will hash the password and save the updated user
     await user.save();
 
+    // delete the user in cache
+    await deleteCachedData(cacheKeyBuilders.pvtResources(user._id), 'profile')
+
     user.password = undefined; // remove password from the response
 
     // change password successfully
@@ -427,6 +431,8 @@ export const submitNewPassword = controllerWrapper(async (req, res, next) => {
 
     // delete token from Redis
     await tokenStore.deleteData(TOKEN_KEY)
+    // delete the user in cache
+    await deleteCachedData(cacheKeyBuilders.pvtResources(user._id), 'profile')
 
     // password changed successfully
     sendApiResponse(res, 201, {
@@ -517,6 +523,9 @@ export const changeEmailWithOTP = controllerWrapper(async (req, res, next) => {
     // save updated user to DB
     await user.save()
 
+    // delete the user in cache
+    await deleteCachedData(cacheKeyBuilders.pvtResources(user._id), 'profile')
+
     // delete OTPData from Redis
     await otpStore.deleteData(OTP_KEY)
 
@@ -565,6 +574,9 @@ export const deleteMyAccount = controllerWrapper(async (req, res, next) => {
     // clear all tokens
     res.clearCookie('AT', { httpOnly: true, sameSite: 'strict'})
     res.clearCookie('RT', { httpOnly: true, sameSite: 'strict'})
+
+    // delete the user in cache
+    await deleteCachedData(cacheKeyBuilders.pvtResources(userID), 'profile')
 
 
         sendApiResponse(res, 200, {

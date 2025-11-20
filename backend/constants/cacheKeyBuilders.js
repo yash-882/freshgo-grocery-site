@@ -10,8 +10,9 @@ export default {
   },
 
 //   key format for private resources
-  pvtResources: (userID, queryOrID) => {
-    if (!userID || !queryOrID) return "unknown";
+  pvtResources: (userID, queryOrID='SINGLE_RES') => {
+    if (!userID) return "unknown";
+
     return `${userID}:${resolveCacheID(queryOrID)}`;
   },
 };
