@@ -2,7 +2,7 @@
 
 const sendApiResponse = (res, statusCode=200, {
     data = null,
-    message = 'Request successful',
+    message,
 }) => {
 
     return res.status(statusCode).json({

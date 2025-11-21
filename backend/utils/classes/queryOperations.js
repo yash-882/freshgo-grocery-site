@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 class QueryOperations {
 
     constructor(query, schemaFields) {
@@ -93,6 +95,10 @@ class QueryOperations {
         }
     }
 
+    handle_idField(field){
+
+    }
+
     createFilter() {
 
         // clean up query string for invalid fields
@@ -106,22 +112,7 @@ class QueryOperations {
                 
                 this.changeToNumeric(numericField)
             }
-        }
-
-        // check for array fields like.  
-        // 'category=food&category=bill' (category =['food', 'bill'])
-
-        for (const field in this.query) {
-            const fieldValue = this.query[field];
-
-
-            if (Array.isArray(fieldValue)) {
-                // include '$in' oprator for arrays field 
-                // like for category(field)
-                //  ['snacks', 'beverages'] --> {category: {"$in": ['snacks','beverages']}}
-                this.query[field] = { "$in": fieldValue };
-            }
-        }
+        }     
 
         //add '$' before each operator like ('gt' -> '$gt') for MongoDB query format
         this.query = JSON.stringify(this.query)
@@ -130,6 +121,30 @@ class QueryOperations {
         // parsing...
         this.query = JSON.parse(this.query);
 
+
+          // check for array fields like.  
+          // 'category=food&category=bill' (category =['food', 'bill'])
+          for (const field in this.query) {
+              const fieldValue = this.query[field];
+              
+              
+            if (Array.isArray(fieldValue)) {
+                // include '$in' oprator for arrays field 
+                // like for category(field)
+                //  ['snacks', 'beverages'] --> {category: {"$in": ['snacks','beverages']}}
+                
+                this.query[field] = { 
+                    // convert type to mongoDB document _id
+                    "$in": field === '_id' ? 
+                    fieldValue.map(id => new mongoose.Types.ObjectId(id)) : fieldValue
+                }; 
+            }
+            
+            else if(field === '_id'){
+                this.query[field] = new mongoose.Types.ObjectId(fieldValue)
+    
+            }
+        }
         return this.query;
     }
 
