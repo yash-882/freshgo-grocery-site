@@ -14,7 +14,7 @@ export const addEmailToQueue = async (to, subject, text) => {
     try {
         await emailQueue.add('sendEmail', { to, subject, text }, {
             removeOnComplete: true, // remove job from queue when completed
-            attempts: 3, // retry up to 3 times on failure
+            attempts: 5, // retry up to 5 times on failure
             backoff: {
                 type: 'exponential',
                 delay: 1000, // initial delay of 1 second, then 2s, 4s, etc
@@ -38,4 +38,6 @@ new Worker('emails', async (job) => {
         console.log(`Failed to send email to ${to}:`, err);
         throw err; // throw error to trigger retry mechanism
     }
+
+
 }, { connection: IOredisClient });

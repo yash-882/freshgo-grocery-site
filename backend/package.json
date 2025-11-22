@@ -31,6 +31,7 @@
     "passport": "^0.7.0",
     "passport-google-oauth2": "^0.2.0",
     "qs": "^6.14.0",
+    "razorpay": "^2.9.6",
     "redis": "^5.8.0"
   }
 }

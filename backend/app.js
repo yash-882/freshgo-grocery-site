@@ -96,7 +96,8 @@ app.use('/api/warehouses', warehouseRouter); //Warehouse manager
 
 
 // NOT-FOUND middleware: triggers when no route matches
-app.use((req, res, next) => next(new CustomError('NotFoundError', 'Route not found!', 404)));
+app.use((req, res, next) => 
+    next(new CustomError('NotFoundError', `Route(${req.originalUrl}) not found!`, 404)));
 
 // Global error handler
 app.use(GlobalErrorHandler);

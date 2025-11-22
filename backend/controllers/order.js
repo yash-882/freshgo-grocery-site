@@ -6,16 +6,18 @@ import CustomError from "../error-handling/customError.js";
 import controllerWrapper from "../utils/controllerWrapper.js";
 import sendApiResponse from "../utils/apiResponse.js";
 import CartModel from "../models/cart.js";
-import ProductModel from "../models/product.js";
 import { getCartSummary, populateCart } from '../utils/helpers/cart.js';
 import { startOrderProcessing } from "../queues/order.js";
 import { addEmailToQueue } from "../queues/email.js";
 import { updateProductsOnCancellation, updateProductsOnDelivery } from "../utils/helpers/product.js";
+import razorpay from "../configs/razorpay.js";
+import crypto from "crypto";
+import { reserveStock } from "../utils/helpers/order.js";
 
 
 // create new order (currently supports only cash_on_delivery)
 export const createOrder = controllerWrapper(async (req, res, next) => {
-    const { addressID, cashOnDelivery } = req.body;
+    const { addressID, paymentMethod } = req.body;
     const user = req.user;
 
     const cart = await populateCart(user, req.nearbyWarehouse);
@@ -42,20 +44,36 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
                 'The provided address was not found in your saved addresses', 400));
     }
 
-    if (cashOnDelivery !== true) {
-        return next(
-            new CustomError('BadRequestError', 
-                'Currently accepting cash on delivery only', 400));
-    }
-
+    // if (cashOnDelivery !== true) {
+    //     return next(
+    //         new CustomError('BadRequestError', 
+    //             'Currently accepting cash on delivery only', 400));
+    // }
+    
     // get total amount of the cart
     const grandTotal = getCartSummary(cart.products).grandTotal;
 
-    let newOrder;
+    const paymentMethodEnums = OrderModel.schema.path('paymentMethod').enumValues
 
+    if(!paymentMethodEnums.includes(paymentMethod)){
+        return next(new CustomError('BadRequestError', 'Invalid payment method!', 400));
+    }
+
+    let razorpayOrder;
+    if (paymentMethod !== 'cash_on_delivery') {
+        razorpayOrder = await razorpay.orders.create({
+            amount: grandTotal * 100, // in paise
+            receipt: 'reciept#1',
+            method: paymentMethod,
+            payment_capture: 1,
+        })
+    }
+    
+    let newOrder;
+    
     // start session
     const session = await mongoose.startSession();
-
+    
     try {
         await session.withTransaction(async () => {
             // create order
@@ -64,8 +82,9 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
                     [{
                         shippingAddress,
                         user: user._id,
-                        paymentMethod: 'cash_on_delivery',
-                        orderStatus: 'placed',
+                        paymentMethod,
+                        orderStatus: paymentMethod === 'cash_on_delivery' ? 'placed' : 'pending',
+                        razorpayOrderID: paymentMethod === 'cash_on_delivery' ? null : razorpayOrder.id,
                         products: cart.products.map(item => ({
                             product: item.productDetails._id,
                             quantity: item.requestedQuantity,
@@ -77,67 +96,141 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
                     { session }
                 )
             )[0];
+            
+            // reserve stock and clear cart
+            await reserveStock(cart.products, user, req.nearbyWarehouse, session);
 
-
-
-            // update product stock
-            const productsUpdates = cart.products.map(item => ({
-                updateOne: {
-                    // ensures enough stock
-                    filter: {
-                        _id: item.productDetails._id,
-                        warehouses: {
-                            $elemMatch: {
-                                warehouse: req.nearbyWarehouse._id,
-                                quantity: { $gte: item.requestedQuantity }
-                            }
-                        } 
-                    },
-                    update: {
-                            $inc: {
-                                'warehouses.$.quantity': -item.requestedQuantity, 
-                            }
-                        
-                        }
-                }
-            }));
-
-            const bulkResult = await ProductModel.bulkWrite(productsUpdates, { session });
-
-            if (bulkResult.matchedCount < cart.products.length) {
-                throw new CustomError(
-                    'BadRequestError',
-                    'Some products just went out of stock. Refresh your cart to continue.',
-                    400
-                );
-            }
-
-            //  clear cart
+            // clear cart
             await CartModel.findOneAndUpdate(
-                { user: user._id },
-                { products: [] },
-                { runValidators: true, session }
-            );
+                    { user: user._id },
+                    { products: [] },
+                    { runValidators: true, session }
+                );
+
+            if (paymentMethod === 'cash_on_delivery') {
             
             // begin order flow ('processing' to 'delivered')
-            await startOrderProcessing({
-                orderID: newOrder._id, 
-                productsName: cart.products.map(item => item.productDetails.name),
-                email: user.email,
-                createdAt: newOrder.createdAt
-            })
+                await startOrderProcessing({
+                    orderID: newOrder._id,
+                    productsName: cart.products.map(item => item.productDetails.name),
+                    email: user.email,
+                    createdAt: newOrder.createdAt
+                })
+
+                return sendApiResponse(res, 201, {
+                    message: 'Order placed successfully ✅',
+                    data: newOrder
+                })
+            }
+
+            else{
+                return sendApiResponse(res, 201, {
+                    message: 'Order creation initiated',
+                    data: {
+                        razorpayOrderID: razorpayOrder.id,
+                        amount: razorpayOrder.amount,
+                        orderDB: newOrder,
+                    }
+                })
+            }
         });
     } catch (err) {
         return next(err);
     } finally {
         await session.endSession();
     }
-
-    return sendApiResponse(res, 201, {
-        message: 'Order confirmed 😄✅',
-        data: newOrder
-    });
 });
+
+// Razorpay makes a POST request on this handler/route for the payment result
+export const razorpayVerify = controllerWrapper(async (req, res, next) => {
+    const payload = req.body
+    const razorpaySignature = req.headers["x-razorpay-signature"];
+
+    const order = await OrderModel.findOne(
+        { razorpayOrderID: payload.payload?.payment?.entity?.order_id })
+        .populate({
+            model: 'user',
+            path: 'user',
+            select: 'email _id warehouse'
+        });
+        
+
+        if (!order) {
+            return next(new CustomError('NotFoundError', 'Order not found', 404))
+        }
+ 
+    
+    const cart = await populateCart(order.user, {_id: order.warehouse});
+
+    // generate expected signature
+    const expectedSignature = crypto.createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET)
+        .update(JSON.stringify(payload))
+        .digest('hex');
+
+
+        // if signatures don't match
+    if (expectedSignature !== razorpaySignature) {
+        return next(new CustomError('BadRequestError', 'Invalid signature', 400))
+    }
+
+    // update order based on event
+    let session;
+
+    if (payload.event === 'payment.failed') {
+        console.log('payment failed');
+
+        // only update if not already failed
+        if (order.paymentStatus !== 'failed') {
+
+            session = await mongoose.startSession();
+
+            try {
+                await session.withTransaction(async () => {
+                    // restore stock
+                    await updateProductsOnCancellation(order.products, order.warehouse);
+
+                    order.paymentStatus = 'failed';
+
+                    await order.save();
+                });
+            }
+            catch (err) {
+                return next(err);
+            }
+            finally {
+                await session.endSession();
+            }
+        }
+
+        // notify user about payment failure
+        await addEmailToQueue(
+            order.user.email,
+            'Payment Failed',
+            `Payment for your order placed on ${order.createdAt.toLocaleString()} has failed. Please try placing the order again.`
+        )
+    }
+
+    else if (payload.event === 'payment.captured') {
+        console.log('payment captured');
+        order.paymentStatus = 'paid';
+        order.orderStatus = 'placed';
+
+
+        await order.save({ session: session });
+
+        // begin order flow ('processing' to 'delivered')
+        await startOrderProcessing({
+            orderID: order._id,
+            productsName: cart.products.map(item => item.productDetails.name),
+            email: order.user.email,
+            createdAt: order.createdAt
+        })
+    }
+
+    sendApiResponse(res, 201, {
+        message: 'OK'
+    })
+})
 
 // get orders
 export const getOrders = controllerWrapper(async (req, res, next) => {

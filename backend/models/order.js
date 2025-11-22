@@ -64,6 +64,12 @@ const OrderSchema = new Schema({
             maxlength: [6, 'Invalid pin code']
         },
     },
+    razorpayOrderID: {
+        type: String,
+        default: null,
+        trim: true,
+        lowercase: true
+    },
     totalAmount: {
         type: Number,
         required: [true, 'Total amount is required'],
@@ -81,7 +87,7 @@ const OrderSchema = new Schema({
     paymentStatus: {
         type: String,
         enum: {
-            values: ['pending', 'paid', 'refunded'],
+            values: ['pending', 'paid', 'refunded', 'failed'],
             message: '{VALUE} is not a valid payment status'
         },
         default: 'pending'
@@ -89,7 +95,7 @@ const OrderSchema = new Schema({
     paymentMethod: {
         type: String,
         enum: {
-            values: ['credit_card', 'upi', 'cash_on_delivery', 'net_banking'],
+            values: ['card', 'upi', 'cash_on_delivery', 'netbanking'],
             message: 'Invalid payment method!'
         },
         

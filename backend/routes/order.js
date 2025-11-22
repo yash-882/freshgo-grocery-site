@@ -4,13 +4,17 @@ import {
     confirmDelivery, 
     createOrder, 
     getOrderByID, 
-    getOrders } from '../controllers/order.js';
+    getOrders, 
+    razorpayVerify, } from '../controllers/order.js';
 import { authorizeUser } from '../middlewares/auths.js';
 import { handleQuery } from '../middlewares/query.js';
 import { schemaRegistery } from '../constants/schemaRegistery.js';
 import { findNearbyWarehouse } from '../middlewares/findNearbyWarehouse.js';
 
 const orderRouter = Router()
+
+// Razorpay makes a POST request on this handler/route for the payment result
+orderRouter.post('/webhook-razorpay', razorpayVerify) //razorpay webhook
 
 // authorize user
 orderRouter.use(authorizeUser)

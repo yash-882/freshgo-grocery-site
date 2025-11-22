@@ -10,15 +10,15 @@ export const orderQueue = new Queue('orders', { connection: IOredisClient })
 // initialize order fulfilment
 export const startOrderProcessing = async (data) => {
     try {
+        // update order status to 'placed' after 5 seconds
         await orderQueue.add('updateStatus', {
             ...data, // usually email and orderID
-            orderStatus: 'processing',
+            orderStatus: 'placed'
         },
         {
             removeOnComplete: true, // remove the job after successful exeuction
-            delay: 5000, //5 seconds (delay before the job runs for the first time)
             attempts: 5, // retry attempts if the job fails
-            jobId: `${data.orderID}-${'processing'}`, //custom unique ID
+            jobId: `${data.orderID}-${'placed'}`, //custom unique ID
             backoff: {
                 type: 'exponential', // delay for each retry: 2 sec -> 4 sec -> 8 sec ...
                 delay: 2000, //initial delay for retry 
@@ -26,7 +26,7 @@ export const startOrderProcessing = async (data) => {
         })
         console.log('Order flow started successfully:', data);
     }
-    
+
     catch (err) {
         console.log('Error occurred while starting the order flow: ', err);
         throw err; // triggers retry
