@@ -17,7 +17,7 @@ import {
 userRouter.use(authorizeUser)
 
 
-userRouter.route('/me')
+userRouter.route('/')
 .get(getMyProfile) //get profile
 .patch(updateMyProfile) //update profile
 
@@ -25,10 +25,10 @@ userRouter.route('/me')
 // CRUD for user's address
 
 // add new address
-userRouter.route('/me/addresses')
+userRouter.route('/addresses')
 .post(addAddress) //add address
 
-userRouter.route('/me/addresses/:id')
+userRouter.route('/addresses/:id')
 .patch(updateAddressByID) //update address
 .delete(deleteAddressByID) //delete
 
@@ -36,13 +36,13 @@ userRouter.route('/me/addresses/:id')
 userRouter.use(roleBasedAccess('warehouse_manager'))
 
 // dashboard for a warehouse
-userRouter.get('/dashboard/revenue-stats', revenueStats)
+userRouter.get('/my-warehouse/dashboard/revenue-stats', revenueStats)
 
 // top 5 selling products
-userRouter.get('/dashboard/top-five-selling-products', topFiveSellingProducts)
+userRouter.get('/my-warehouse/dashboard/top-five-selling-products', topFiveSellingProducts)
 
 // current period vs previous period
-userRouter.get('/dashboard/revenue-comparison/:comparison', revenueComparison)
+userRouter.get('/my-warehouse/dashboard/revenue-comparison/:comparison', revenueComparison)
 
 
 export default userRouter;

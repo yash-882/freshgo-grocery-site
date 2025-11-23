@@ -21,7 +21,7 @@ orderRouter.use(authorizeUser)
 
 orderRouter.get('/', handleQuery(schemaRegistery.order), getOrders) // get order history
 
-orderRouter.post('/', findNearbyWarehouse, createOrder) //create order
+orderRouter.post('/create', findNearbyWarehouse, createOrder) //create order
 orderRouter.patch('/cancel/:id', cancelOrder) //cancel order
 orderRouter.post('/confirm-delivery/:id/:isAccepted', confirmDelivery) //accept or deny order
 

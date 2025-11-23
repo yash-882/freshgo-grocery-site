@@ -82,9 +82,9 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 
 // Authenticated user routes
-app.use('/api/users', userRouter);
-app.use('/api/carts', cartRouter);
-app.use('/api/orders', orderRouter);
+app.use('/api/my-profile', userRouter);
+app.use('/api/my-cart', cartRouter);
+app.use('/api/my-orders', orderRouter);
 
 // Product routes
 app.use('/api/products/manager', productRouterManager); // Warehouse manager
