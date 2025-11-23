@@ -2,7 +2,7 @@
 
 import { Queue, Worker } from 'bullmq';
 import IOredisClient from '../configs/ioredisClient.js';
-import sendEmail from '../utils/mailer.js';
+import sendEmail from '../utils/mailjet.js';
 
 // create a queue for emails
 export const emailQueue = new Queue('emails', {

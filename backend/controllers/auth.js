@@ -5,7 +5,7 @@ import CustomError from "../error-handling/customError.js";
 import { signAccessToken, signRefreshToken } from "../utils/helpers/jwt.js";
 import { findUserByQuery, bcryptCompare, generateOTP, verifyOTP, trackOTPLimit } from "../utils/helpers/auth.js";
 import client from "../configs/redisClient.js";
-import sendEmail from "../utils/mailer.js";
+import sendEmail from "../utils/mailjet.js";
 import RedisService from "../utils/classes/redisService.js";
 import mongoose from "mongoose";
 import sendApiResponse from "../utils/apiResponse.js";
