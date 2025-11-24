@@ -8,7 +8,6 @@ const insertWarehouses = async () => {
         await mongoose.connect(process.env.MONGO_URI);
         console.log('Connected to MongoDB');
 
-        await WarehouseModel.deleteMany({}); //avoid duplication
         await WarehouseModel.create([{
             location: {
                 type: 'Point',
