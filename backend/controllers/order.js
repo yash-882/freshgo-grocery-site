@@ -146,6 +146,12 @@ export const razorpayVerify = controllerWrapper(async (req, res, next) => {
     const payload = req.body
     const razorpaySignature = req.headers["x-razorpay-signature"];
 
+    console.log( 'payload',payload.payload);
+    console.log( 'id',payload.payload?.payment?.entity?.order_id);
+
+    
+    
+
     const order = await OrderModel.findOne(
         { razorpayOrderID: payload.payload?.payment?.entity?.order_id })
         .populate({

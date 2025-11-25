@@ -3,6 +3,7 @@
 import IOredisClient from "../configs/ioredisClient.js";
 import { Queue, Worker } from 'bullmq';
 import OrderModel from "../models/order.js";
+import { orderCancellationQueue } from "./autoCancelOrder.js";
 
 // create queue
 export const orderQueue = new Queue('orders', { connection: IOredisClient })
@@ -39,7 +40,20 @@ const updateOrderStatus = async (job) => {
 
         const order = await OrderModel.findById(job.data.orderID)
         // skip scheduling a new job on these order states
-        const skipStatuses = ['pending', 'delivered', 'reached_destination', 'cancelled']
+        const skipStatuses = ['pending', 'delivered', 'cancelled']
+
+        if(order.orderStatus === 'reached_destination'){
+        // schedule auto-cancellation after 2 minute of reaching destination
+         await orderCancellationQueue.add('cancelOrder', {
+            ...job.data,
+            orderStatus: 'cancelled',
+        }, {
+            removeOnComplete: true, // remove the job after successful exeuction
+            delay: 1000 * 60 * 2, // 2 minutes
+            attempts: 5, // retry attempts if the job fails
+        })
+        return;
+        }
 
         if(!order || skipStatuses.includes(order.orderStatus)){
             return;
@@ -55,8 +69,9 @@ const updateOrderStatus = async (job) => {
             placed: 'processing',
             processing: 'ready_for_pickup',
             ready_for_pickup: 'out_for_delivery',
-            out_for_delivery: 'reached_destination'
+            out_for_delivery: 'reached_destination',
         }
+
 
         const nextStatus = nextStatusMap[job.data.orderStatus]
 
@@ -67,7 +82,7 @@ const updateOrderStatus = async (job) => {
         },
             {
                 removeOnComplete: true, // remove the job after successful exeuction
-                delay: 1000 * 30, // 30 seconds (delay before the job runs for the first time)
+                delay: 1000 * 10, // 10 seconds (delay before the job runs for the first time)
                 attempts: 5, // retry attempts if the job fails
                 jobId: `${job.data.orderID}-${nextStatus}`, //custom unique ID
                 backoff: {
@@ -85,3 +100,4 @@ const updateOrderStatus = async (job) => {
 
 //  listens for jobs and executes them
 new Worker('orders', updateOrderStatus, { connection: IOredisClient })
+
