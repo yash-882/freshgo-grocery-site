@@ -23,7 +23,7 @@ export const findUserByQuery = async (query,
 export const bcryptCompare = async ({plain, hashed}, errMessage = 'Incorrect!') => {
 
     // compare plain string with hashed string
-    const isCorrect = await bcrypt.compare(plain, hashed);
+    const isCorrect = await bcrypt.compare(plain + "", hashed);
 
     if(!isCorrect) {
         throw new CustomError('UnauthorizedError', errMessage, 401);

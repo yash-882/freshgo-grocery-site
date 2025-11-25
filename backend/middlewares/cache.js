@@ -2,6 +2,7 @@ import { getCachedData } from "../utils/helpers/cache.js";
 import sendApiResponse from "../utils/apiResponse.js";
 import controllerWrapper from "../utils/controllerWrapper.js";
 import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
+import { log } from "console";
 
 // middleware to get cached products (stored in Redis)
 // resourceType can be a product/cart/user/order, etc
@@ -34,5 +35,6 @@ export const checkCachedData = (resourceType,  isPvtResource=false) => {
 
     // send cached response
     sendApiResponse(res, 200, {data: cachedData });
+    console.log('Sent via cache.');
 })
 }

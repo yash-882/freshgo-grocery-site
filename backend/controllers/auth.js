@@ -13,6 +13,8 @@ import CartModel from "../models/cart.js";
 import passport from "passport";
 import { deleteCachedData } from "../utils/helpers/cache.js";
 import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
+import jwt from "jsonwebtoken";
+import { promisify } from "util";
 
 // signup user after OTP validation
 export const signUp = controllerWrapper(async (req, res, next) => {
@@ -379,7 +381,18 @@ export const verifyPasswordResetOTP = controllerWrapper(async (req, res, next) =
     // storing token for changing the password (allows user to change the password)
     await tokenStore.setShortLivedData(token, 300)
     
-    
+    // sign and store a jwt in cookies
+    const passwordJWT = jwt.sign({
+        email, 
+        purpose: 'RESET_PASSWORD_TOKEN'
+    }, process.env.JWT_SECRET, {expiresIn: '5m'})
+
+    res.cookie('PRT', passwordJWT, {
+        httpOnly: true,
+        sameSite: 'strict',
+        expires: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes 
+    });
+
     // user is now allowed to modify their password
     sendApiResponse(res, 201, {
         message: 'Verification successful, Please enter a new password',
@@ -392,17 +405,30 @@ export const submitNewPassword = controllerWrapper(async (req, res, next) => {
 
     const {email, newPassword, confirmNewPassword} = req.body 
 
+    const throwInvalidSessionError = () => 
+        next(new CustomError('UnauthorizedError', 'Session has been expired or not valid!', 401));
+
+    if(!req.cookies.PRT)
+        return throwInvalidSessionError();
+
+
+    // verify JWT from cookies
+     await promisify(jwt.verify)(req.cookies.PRT, process.env.JWT_SECRET)
+
+
      // a unique key is generated with the combination of 'purpose' and 'email' for Redis
     const tokenStore = new RedisService(email, 'RESET_PASSWORD_TOKEN')
     const TOKEN_KEY = tokenStore.getKey()
 
-    // find if token is stored in Redis
+
     const tokenData = await tokenStore.getData(TOKEN_KEY);
 
     //if user has not a valid token 
-    if(!tokenData || !tokenData.verified || tokenData.purpose !== 'RESET_PASSWORD_TOKEN'){
-          return next(
-    new CustomError('UnauthorizedError', 'Session has been expired or not valid!', 401));
+    if(!tokenData || 
+        !tokenData.verified ||  
+        tokenData.email !== email || 
+        tokenData.purpose !== 'RESET_PASSWORD_TOKEN'){
+        return throwInvalidSessionError();
     }
 
     // if these fields does not match
@@ -425,6 +451,11 @@ export const submitNewPassword = controllerWrapper(async (req, res, next) => {
 
     // assign new password
     user.password = newPassword 
+    
+    // add 'local' auth to array after password reset
+    if(!user.auth.includes('local')) {
+        user.auth.push('local')
+    }
 
     //save user document, pre-save hook will hash the password
     await user.save()
