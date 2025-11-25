@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
 
 // search products 
 export const searchProducts = controllerWrapper(async (req, res, next) => {
-  const { value, skip, limit, sort } = req.sanitizedQuery || {};
+  const { value, filter, skip, limit, sort, select } = req.sanitizedQuery || {};
 
   // search value is required
   if (!value) {
@@ -17,13 +17,58 @@ export const searchProducts = controllerWrapper(async (req, res, next) => {
   }
 
   // search products based on the query
-  const searchedProducts = await ProductModel.find({ $text: { $search: value } })
-    .sort(sort)
-    .skip(skip)
-    .limit(limit)
+  const searchedProducts = await ProductModel.aggregate([
+    {
+      $match: {
+        ...filter,
+        "warehouses.warehouse": req.nearbyWarehouse._id,
+        $text: { $search: value }
+      }
+    },
+    // get the products available in the nearby warehouse
+    {
+      $addFields: {
+        matchedWarehouse: {
+          $first: {
+            $filter: {
+              input: "$warehouses",
+              as: "w",
+              cond: { $eq: ["$$w.warehouse", req.nearbyWarehouse._id] }
+            }
+          }
+        }
+      }
+    },
 
-  // store products in cache(Redis)
-  await storeCachedData(req.redisCacheKey, { data: searchedProducts }, 'product')
+    // add the product quantity available in the warehouse
+    {
+      $addFields: {
+        quantity: "$matchedWarehouse.quantity"
+      }
+    },  
+    // default sort by relevance (here, we sort by quantity descending)
+    { $sort: {...sort, quantity: sort.quantity || -1}},
+
+    { $skip: skip || 0 },
+    { $limit: limit || 12 },
+
+    // projection
+    {
+      $project: select ? select : {
+        warehouses: 0,
+        matchedWarehouse: 0,
+        score: 0,
+        __v: 0,
+      }
+    },
+  ]);
+
+  if (searchedProducts.length > 0 && req.redisCacheKey) {
+    // store products in cache(Redis)
+    await storeCachedData(req.redisCacheKey, { data: searchedProducts }, 'product')
+  }
+
+
   sendApiResponse(res, 200, {
     data: searchedProducts,
 
@@ -33,14 +78,14 @@ export const searchProducts = controllerWrapper(async (req, res, next) => {
 // get multiple products (public route)
 export const getProducts = controllerWrapper(async (req, res, next) => {
 
-  const { filter, sort, limit, skip } = req.sanitizedQuery || {};
+  const { filter, sort, limit, skip, select } = req.sanitizedQuery || {};
 
   let quantity;
 
   // handle query for quantity
   if(filter.quantity){
     quantity = filter.quantity;
-    delete filter.quantity; //remove from the original filter
+    delete filter.quantity; //remove from the original filter (because its not a direct field in product)
   } 
   else{
     quantity = { $gt: -1 } //default
@@ -79,21 +124,23 @@ const products = await ProductModel.aggregate([
   {
     $match: { quantity }
   },
+  
+  // default sort by quantity descending
+  { $sort: {...sort, quantity: sort.quantity || -1}},
 
+  { $skip: skip || 0},
+  { $limit: limit || 12},
+
+  // projection
   {
-    $project: {
+    $project: select? select : {
       warehouses: 0,
       matchedWarehouse: 0,
-      description: 0,
-      score: 0,
       tags: 0,
+      score: 0,
       __v: 0,
-      createdAt: 0,
     }
   },
-  { $sort: sort || { score : -1 }},
-  { $skip: skip || 0},
-  { $limit: limit || 12}
 ]);
 
   if (products.length > 0 && req.redisCacheKey) {
@@ -143,8 +190,9 @@ export const getProductByID = controllerWrapper(async (req, res, next) => {
     $project: {
       warehouses: 0,
       matchedWarehouse: 0,
+      tags: 0,
+      score: 0,
       __v: 0,
-      createdAt: 0,
     }
   }
   ])

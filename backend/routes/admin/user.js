@@ -15,9 +15,9 @@ const userRouter = Router();
 
 // operations for multiple user
 userRouter.route('/')
-    .get(handleQuery(schemaRegistery.user, true), getUsers)
-    .patch(handleQuery(schemaRegistery.user, true), updateUsers)
-    .delete(handleQuery(schemaRegistery.user, true), deleteUsers)
+    .get(handleQuery(schemaRegistery.user), getUsers)
+    .patch(handleQuery(schemaRegistery.user), updateUsers)
+    .delete(handleQuery(schemaRegistery.user), deleteUsers)
 
 // operations for a single user
 userRouter.route('/:id')

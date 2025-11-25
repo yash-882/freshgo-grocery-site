@@ -12,11 +12,8 @@ export const  schemaRegistery = {
     numericFields: schemaFieldHelpers.getNumericFields(ProductModel.schema.paths, ['quantity']),
 
     // all fields
-    allFields: schemaFieldHelpers.getAllFields(ProductModel.schema.paths),
+    allFields: schemaFieldHelpers.getAllFields(ProductModel.schema.paths, ['score', 'quantity']),
 
-    // selectable fields
-    selectableFields: schemaFieldHelpers
-    .getSelectableFields(ProductModel.schema.paths, ['score'], ['quantity'])
   },
 
   order:{
@@ -25,10 +22,6 @@ export const  schemaRegistery = {
 
     // all fields
     allFields: schemaFieldHelpers.getAllFields(OrderModel.schema.paths),
-
-    // selectable fields
-    selectableFields: schemaFieldHelpers
-    .getSelectableFields(OrderModel.schema.paths, ['user', 'products'])
   },
 
   // used by Admin only 
@@ -39,9 +32,6 @@ export const  schemaRegistery = {
     // all fields
     allFields: schemaFieldHelpers.getAllFields(UserModel.schema.paths),
 
-    // selectable fields (Admin only: no fields are restricted to select)
-    selectableFields: schemaFieldHelpers
-    .getSelectableFields(UserModel.schema.paths)
   },
   warehouse: {
     // numeric fields
@@ -49,10 +39,6 @@ export const  schemaRegistery = {
 
     // all fields
     allFields: schemaFieldHelpers.getAllFields(WarehouseModel.schema.paths),
-
-    // selectable fields
-    selectableFields: schemaFieldHelpers
-    .getSelectableFields(WarehouseModel.schema.paths)
     
   }
 };

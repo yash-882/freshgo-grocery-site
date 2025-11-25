@@ -3,7 +3,6 @@
 import { Router } from 'express'
 import { handleQuery } from '../../middlewares/query.js';
 import { schemaRegistery } from '../../constants/schemaRegistery.js';
-import { checkCachedData } from '../../middlewares/cache.js';
 import {
     createProduct,
     adminDeleteProductByID,
@@ -11,7 +10,6 @@ import {
     adminUpdateProductByID,
     adminUpdateProducts
 } from '../../controllers/admin/product.js';
-import { getProductByID, getProducts } from '../../controllers/product.js';
 import uploader from '../../configs/multer.js';
 
 
@@ -19,13 +17,11 @@ const productRouter = Router();
 
 // operations for multiple products
 productRouter.route('/')
-    .get(handleQuery(schemaRegistery.product, true), checkCachedData('product', true), getProducts)
-    .patch(handleQuery(schemaRegistery.product, true), adminUpdateProducts)
+    .patch(handleQuery(schemaRegistery.product), adminUpdateProducts)
     .delete(handleQuery(schemaRegistery.product, true), adminDeleteProducts)
 
 // operations for a single product
 productRouter.route('/:id')
-    .get(checkCachedData('product', true), getProductByID)
     .patch(adminUpdateProductByID)
     .delete(adminDeleteProductByID)
 

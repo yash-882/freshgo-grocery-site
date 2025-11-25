@@ -15,21 +15,11 @@ export const schemaFieldHelpers = {
   },
 
 //   get all fields of Mongoose schema
-  getAllFields(schemaPaths) {
+  getAllFields(schemaPaths, customAllowedFields=[]) {
     if (!schemaPaths) return [];
 
     const allFields = Object.keys(schemaPaths).filter(f => f !== "__v");
 
-    return new Set(allFields) //all fields except '__v'
+    return new Set([...allFields, ...customAllowedFields]) //all fields except '__v'
   },
-
-//   extracts only allowed fields for selection
-  getSelectableFields(schemaPaths, nonSelectableFields=[], customAllowedFields=[]){
-    if (!schemaPaths) return [];
-
-    const selectableFields = Object.keys(schemaPaths)
-    .filter(f => !nonSelectableFields.includes(f));
-
-    return new Set([...selectableFields, ...customAllowedFields])
-  }
 };

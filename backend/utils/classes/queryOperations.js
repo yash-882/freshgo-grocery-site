@@ -12,16 +12,14 @@ class QueryOperations {
     }
 
     // removes invalid fields that are not part of the schema or contain empty/falsy values
-    removeInvalidFields(isAdmin) {
+    removeInvalidFields() {
         Object.keys(this.query).forEach(field => {
             // check is the key is assigned with an empty value/array/obj/ or undefined
             const isEmptyStr = typeof this.query[field] === 'string' && this.query[field].trim() === '';
             const isEmptyObject = typeof this.query[field] === 'object' && this.query[field] !== null && Object.keys(this.query[field]).length === 0;
             const isEmptyArray = Array.isArray(this.query[field]) && this.query[field].length === 0;
             const isFalsy = this.query[field] === undefined || this.query[field] === null;
-            const isInvalidDBField = isAdmin ? 
-            !this.schemaFields.allFields.has(field) : 
-            !this.schemaFields.selectableFields.has(field);
+            const isInvalidDBField = !this.schemaFields.allFields.has(field) 
             
             // if the field contains falsy value
             if (isInvalidDBField || isEmptyStr || isEmptyObject || isEmptyArray || isFalsy)
@@ -183,16 +181,15 @@ class QueryOperations {
             delete this.query.sort; 
         
     }
-createSelectFields(isAdmin) {
+createSelectFields() {
     if (!this.select) return;
 
     const fields = this.select.split(',')
 
     
     // allow specific field access based on role
-    const allowedFields = isAdmin
-        ? this.schemaFields.allFields
-        : this.schemaFields.selectableFields;
+    const allowedFields = this.schemaFields.allFields
+
 
     // extract valid fields 
     const selectedFields = [...new Set(fields)].filter(f => {

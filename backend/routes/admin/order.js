@@ -15,9 +15,9 @@ import {
 const orderRouter = Router();
 
 orderRouter.route('/')
-  .get(handleQuery(schemaRegistery.order, true), getOrders)     // get all orders
-  .delete(handleQuery(schemaRegistery.order, true), deleteOrders) // delete multiple orders
-  .patch(handleQuery(schemaRegistery.order, true), updateOrders); // update multiple orders
+  .get(handleQuery(schemaRegistery.order), getOrders)     // get all orders
+  .delete(handleQuery(schemaRegistery.order), deleteOrders) // delete multiple orders
+  .patch(handleQuery(schemaRegistery.order), updateOrders); // update multiple orders
 
 orderRouter.route('/:id')
   .get(getOrderByID)      // get order by ID
