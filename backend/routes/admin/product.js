@@ -4,11 +4,12 @@ import { Router } from 'express'
 import { handleQuery } from '../../middlewares/query.js';
 import { schemaRegistery } from '../../constants/schemaRegistery.js';
 import {
-    createProduct,
+    createProductsWithImages,
     adminDeleteProductByID,
     adminDeleteProducts,
     adminUpdateProductByID,
-    adminUpdateProducts
+    adminUpdateProducts,
+    createProducts
 } from '../../controllers/admin/product.js';
 import uploader from '../../configs/multer.js';
 
@@ -26,7 +27,7 @@ productRouter.route('/:id')
     .delete(adminDeleteProductByID)
 
 // create product
-productRouter.post('/',
+productRouter.post('/with-images',
 
     // product image uploader
     uploader({
@@ -37,6 +38,8 @@ productRouter.post('/',
         saveFormat: 'jpeg', //save images in jpeg format
         // 5 images per product
     }).array('images'),
-    createProduct) //create product
+    createProductsWithImages) //create product
+
+    productRouter.post('/', createProducts) //create product without images
 
 export default productRouter;

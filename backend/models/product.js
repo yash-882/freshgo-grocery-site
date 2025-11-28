@@ -99,10 +99,9 @@ const ProductSchema = new Schema({
     },
     images: {
         type: [String],
-        required: true,
         validate: {
-            validator: function (images) {
-                return images.length >= 1 && images.length <= 5
+            validator: function (images=[]) {
+                return images.length <= 5
             },
             message: () => 'Images (1-5 required)'
         }

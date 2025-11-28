@@ -9,8 +9,8 @@ import cacheKeyBuilders from '../../constants/cacheKeyBuilders.js';
 import cloudinary from '../../configs/cloudinary.js';
 import { getProductBodyForDB, limitProductCreation } from '../../utils/helpers/product.js';
 
-// create new product
-export const createProduct = controllerWrapper(async (req, res, next) => {
+// create products with images
+export const createProductsWithImages = controllerWrapper(async (req, res, next) => {
     // Multer keeps the stringify data in req.body (express.json() can't parse it)
     const productData = JSON.parse(req.body.productData);
 
@@ -21,7 +21,7 @@ export const createProduct = controllerWrapper(async (req, res, next) => {
     // body is empty
     if (Object.keys(productData).length === 0)
         return new CustomError('BadRequestError',
-            `Please enter all required fields!`, 400)
+            `Please enter all required fields! ${ProductModel.schema.requiredPaths()}`, 400)
 
     // throws error if products limit exceeds
     limitProductCreation(productData)
@@ -49,10 +49,24 @@ export const createProduct = controllerWrapper(async (req, res, next) => {
     })
 })
 
+// create products without images
+export const createProducts = controllerWrapper(async (req, res, next) => {
+    const body = req.body;
+
+    // throws error if products limit exceeds
+    limitProductCreation(body)
+
+    const productData =  await ProductModel.create(body);
+
+    sendApiResponse(res, 201, {
+        message: 'Product created successfully',
+        data: productData
+    })
+})   
 
 // update multiple products
 export const adminUpdateProducts = controllerWrapper(async (req, res, next) => {
-    if (Object.keys(req.body || {}).length === 0) {
+    if (Object.keys(req.body).length === 0) {
         return next(new CustomError('BadRequestError', 'Body is empty for updation!', 400));
     }
 
