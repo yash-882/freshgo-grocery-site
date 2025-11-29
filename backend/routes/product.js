@@ -10,12 +10,14 @@ import { handleQuery } from '../middlewares/query.js';
 import { checkCachedData } from '../middlewares/cache.js';
 const productRouter = Router();
 import { findNearbyWarehouse } from '../middlewares/findNearbyWarehouse.js';
+import { typoCorrection } from '../middlewares/ai/typoCorrection.js';
 
 productRouter.use(findNearbyWarehouse);
 
 // search products: public route
 productRouter.get('/search',
     handleQuery(schemaRegistery.product),
+    typoCorrection,
     checkCachedData('product', false),
     searchProducts)
 
