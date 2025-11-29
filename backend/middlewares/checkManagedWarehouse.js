@@ -1,9 +1,8 @@
 import CustomError from "../error-handling/customError.js";
-import controllerWrapper from "../utils/controllerWrapper.js";
 import { getManagedWarehouseByUser } from "../utils/helpers/warehouse.js";
 
 // middleware to check if the user manages a warehouse
-export const checkManagedWarehouse = controllerWrapper(async (req, res, next) => {
+export const checkManagedWarehouse = async (req, res, next) => {
     const managedWarehouse = await getManagedWarehouseByUser(req.user);
 
     if (!managedWarehouse) {
@@ -12,4 +11,4 @@ export const checkManagedWarehouse = controllerWrapper(async (req, res, next) =>
 
     req.managedWarehouse = managedWarehouse;
     next();
-});
+}

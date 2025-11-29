@@ -1,13 +1,12 @@
 import WarehouseModel from "../../models/warehouse.js";
 import CustomError from "../../error-handling/customError.js";
-import controllerWrapper from "../../utils/controllerWrapper.js";
 import sendApiResponse from "../../utils/apiResponse.js";
 import UserModel from "../../models/user.js";
 import mongoose from "mongoose";
 import ProductModel from "../../models/product.js";
 
 // Create a new warehouse (admin only)
-export const createWarehouse = controllerWrapper(async (req, res, next) => {
+export const createWarehouse = async (req, res, next) => {
     const warehouseData = req.body;
     const newWarehouse = await WarehouseModel.create(warehouseData);
 
@@ -15,11 +14,11 @@ export const createWarehouse = controllerWrapper(async (req, res, next) => {
         message: 'Warehouse created successfully',
         data: newWarehouse,
     });
-});
+}
 
 
 // Get all warehouses (admin only)
-export const getWarehouses = controllerWrapper(async (req, res, next) => {
+export const getWarehouses = async (req, res, next) => {
     const { filter, sort, limit, skip, select } = req.sanitizedQuery;
 
     const warehouses = await WarehouseModel.find(filter)
@@ -35,9 +34,10 @@ export const getWarehouses = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         data: warehouses,
     });
-});
+}
+
 // Get warehouse by ID (admin only)
-export const getWarehouseByID = controllerWrapper(async (req, res, next) => {
+export const getWarehouseByID = async (req, res, next) => {
     const warehouseID = req.params.id;
 
     const warehouse = await WarehouseModel.findById(warehouseID)
@@ -53,10 +53,10 @@ export const getWarehouseByID = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         data: warehouse,
     });
-})
+}
 
 // Update warehouse by ID(admin only)
-export const updateWarehouseByID = controllerWrapper(async (req, res, next) => {
+export const updateWarehouseByID = async (req, res, next) => {
     const warehouseID = req.params.id;
     const updates = req.body || {};
 
@@ -93,10 +93,10 @@ export const updateWarehouseByID = controllerWrapper(async (req, res, next) => {
         message: 'Warehouse updated successfully',
         data: updatedWarehouse,
     });
-})
+}
 
 // Assign manager to a warehouse (admin only)
-export const assignManagerToWarehouse = controllerWrapper(async (req, res, next) => {
+export const assignManagerToWarehouse = async (req, res, next) => {
     const warehouseID = req.params.id;
     const { managerID } = req.body;
 
@@ -136,10 +136,10 @@ export const assignManagerToWarehouse = controllerWrapper(async (req, res, next)
         message: 'Manager assigned to warehouse successfully',
         data: updatedWarehouse,
     });
-});
+}
 
 // Remove manager from a warehouse (admin only)
-export const removeManagerFromWarehouse = controllerWrapper(async (req, res, next) => {
+export const removeManagerFromWarehouse = async (req, res, next) => {
     const warehouseID = req.params.id;
     const { managerID } = req.body; // Manager ID to remove
 
@@ -164,10 +164,10 @@ export const removeManagerFromWarehouse = controllerWrapper(async (req, res, nex
         message: 'Manager removed from warehouse successfully',
         data: updatedWarehouse,
     });
-});
+}
 
 // Delete warehouse by ID (admin only)
-export const deleteWarehouseByID = controllerWrapper(async (req, res, next) => {
+export const deleteWarehouseByID = async (req, res, next) => {
     const warehouseID = req.params.id;
 
     let session;
@@ -201,4 +201,4 @@ export const deleteWarehouseByID = controllerWrapper(async (req, res, next) => {
             session.endSession();
         }
     }
-});
+}

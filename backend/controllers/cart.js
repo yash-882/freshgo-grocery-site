@@ -2,13 +2,12 @@
 
 import CartModel from '../models/cart.js';
 import CustomError from '../error-handling/customError.js';
-import controllerWrapper from '../utils/controllerWrapper.js';
 import sendApiResponse from '../utils/apiResponse.js';
 import ProductModel from '../models/product.js';
 import { getCartSummary, populateCart, validateStock } from '../utils/helpers/cart.js';
 
 // get user's cart
-export const getCart = controllerWrapper(async (req, res, next) => {
+export const getCart = async (req, res, next) => {
     const user = req.user;
 
     // get current user's cart with products
@@ -37,10 +36,10 @@ export const getCart = controllerWrapper(async (req, res, next) => {
         },
         message: cart.products.length === 0 ? "No items in your cart yet" : undefined,
     });
-});
+}
 
 // add product to cart
-export const addToCart = controllerWrapper(async (req, res, next) => {
+export const addToCart = async (req, res, next) => {
     const userID = req.user.id;
     const { productID, quantity=1 } = req.body;
 
@@ -91,9 +90,10 @@ export const addToCart = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         message: 'Added to cart successfully',
     });
-});
+}
+
 // clear cart   
-export const clearCart = controllerWrapper(async (req, res, next) => {
+export const clearCart = async (req, res, next) => {
     const userID = req.user.id;
 
     const cart = await CartModel.findOne({ user: userID });
@@ -112,10 +112,10 @@ export const clearCart = controllerWrapper(async (req, res, next) => {
         cart,
         message: 'Cart cleared successfully',
     });
-});
+}
 
 // remove product from cart
-export const removeFromCart = controllerWrapper(async (req, res, next) => {
+export const removeFromCart = async (req, res, next) => {
     const userID = req.user.id;
     const productID = req.params.id;
 
@@ -143,12 +143,11 @@ export const removeFromCart = controllerWrapper(async (req, res, next) => {
         message: 'Product removed from cart successfully',
         data: cart
     });
-});
-
+}
 
 //  /cart/:productId/:operation
 // operation = 'inc' or 'dec'
-export const updateCartItemQuantity = controllerWrapper(async (req, res, next) => {
+export const updateCartItemQuantity = async (req, res, next) => {
     const { productID, operation } = req.params;
 
     if (!productID)
@@ -206,4 +205,4 @@ export const updateCartItemQuantity = controllerWrapper(async (req, res, next) =
         data: finalCart,
         message: finalCart.products.length === 0 ? 'Cart is empty' : undefined,
     });
-});
+}

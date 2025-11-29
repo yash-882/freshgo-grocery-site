@@ -2,13 +2,12 @@
 
 import CustomError from '../error-handling/customError.js';
 import ProductModel from '../models/product.js';
-import controllerWrapper from '../utils/controllerWrapper.js';
 import sendApiResponse from '../utils/apiResponse.js';
 import { storeCachedData } from '../utils/helpers/cache.js';
 import mongoose from 'mongoose';
 
 // search products 
-export const searchProducts = controllerWrapper(async (req, res, next) => {
+export const searchProducts = async (req, res, next) => {
   const { value, filter, skip, limit, sort, select } = req.sanitizedQuery || {};
 
   // search value is required
@@ -73,10 +72,10 @@ export const searchProducts = controllerWrapper(async (req, res, next) => {
     data: searchedProducts,
 
   })
-})
+}
 
 // get multiple products (public route)
-export const getProducts = controllerWrapper(async (req, res, next) => {
+export const getProducts = async (req, res, next) => {
 
   const { filter, sort, limit, skip, select } = req.sanitizedQuery || {};
 
@@ -154,11 +153,10 @@ const products = await ProductModel.aggregate([
     data: products,
     dataLength: products.length,
   })
-})
-
+}
 
 // get single product by ID (public route)
-export const getProductByID = controllerWrapper(async (req, res, next) => {
+export const getProductByID = async (req, res, next) => {
   const productID = req.params.id;
 
   const product = await ProductModel.aggregate([
@@ -209,4 +207,4 @@ export const getProductByID = controllerWrapper(async (req, res, next) => {
   sendApiResponse(res, 200, {
     data: product[0],
   })
-});
+}

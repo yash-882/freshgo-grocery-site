@@ -2,7 +2,6 @@
 
 import CustomError from '../../error-handling/customError.js';
 import ProductModel from '../../models/product.js';
-import controllerWrapper from '../../utils/controllerWrapper.js';
 import sendApiResponse from '../../utils/apiResponse.js';
 import { deleteCachedData, storeCachedData } from '../../utils/helpers/cache.js';
 import cacheKeyBuilders from '../../constants/cacheKeyBuilders.js';
@@ -17,7 +16,7 @@ import { generateProductFieldsAi } from '../../utils/ai/generateProductFieldsAi.
 
 
 // create products with images
-export const createProductsWithImages = controllerWrapper(async (req, res, next) => {
+export const createProductsWithImages = async (req, res, next) => {
     // Multer keeps JSON stringified
     const productData = JSON.parse(req.body.productData);
 
@@ -102,11 +101,11 @@ export const createProductsWithImages = controllerWrapper(async (req, res, next)
         message: 'Product created successfully',
         data: createdProductData
     });
-});
+}
 
 
 // create products without images
-export const createProducts = controllerWrapper(async (req, res, next) => {
+export const createProducts = async (req, res, next) => {
     const products = Array.isArray(req.body) ? req.body :  [req.body];
 
     if(products.length === 0)
@@ -157,10 +156,10 @@ export const createProducts = controllerWrapper(async (req, res, next) => {
         message: 'Product created successfully',
         data: createdProducts
     })
-})   
+}
 
 // update multiple products
-export const adminUpdateProducts = controllerWrapper(async (req, res, next) => {
+export const adminUpdateProducts = async (req, res, next) => {
     if (Object.keys(req.body).length === 0) {
         return next(new CustomError('BadRequestError', 'Body is empty for updation!', 400));
     }
@@ -186,11 +185,11 @@ export const adminUpdateProducts = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         message: `Updated ${result.modifiedCount} product(s) successfully`,
     });
-});
+}
 
 
 // delete multiple products (accessible roles: Admin only)
-export const adminDeleteProducts = controllerWrapper(async (req, res, next) => {
+export const adminDeleteProducts = async (req, res, next) => {
     const { filter } = req.sanitizedQuery;
 
     // Delete all matching products
@@ -207,10 +206,10 @@ export const adminDeleteProducts = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         message: `${result.deletedCount} product(s) deleted successfully`,
     });
-});
+}
 
 // update product by ID
-export const adminUpdateProductByID = controllerWrapper(async (req, res, next) => {
+export const adminUpdateProductByID = async (req, res, next) => {
     if (Object.keys(req.body || {}).length === 0) {
         return next(new CustomError('BadRequestError', 'Body is empty for updation!', 400));
     }
@@ -236,10 +235,10 @@ export const adminUpdateProductByID = controllerWrapper(async (req, res, next) =
         data: product, //updated product
         message: 'Product updated successfully',
     })
-});
+}
 
 // delete product by ID 
-export const adminDeleteProductByID = controllerWrapper(async (req, res, next) => {
+export const adminDeleteProductByID = async (req, res, next) => {
     const productID = req.params.id;
 
     const deletedProduct = await ProductModel.findByIdAndDelete(productID);
@@ -256,4 +255,4 @@ export const adminDeleteProductByID = controllerWrapper(async (req, res, next) =
         message: 'Product deleted successfully',
     })
 
-});
+}

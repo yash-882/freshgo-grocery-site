@@ -3,12 +3,11 @@
 import ProductModel from './../../models/product.js';
 import CustomError from '../../error-handling/customError.js';
 import sendApiResponse from '../../utils/apiResponse.js';
-import controllerWrapper from '../../utils/controllerWrapper.js';
 import mongoose from 'mongoose';
 import { storeCachedData } from '../../utils/helpers/cache.js';
 
 // Get my warehouse products (warehouse_manager)
-export const getMyWarehouseProducts = controllerWrapper(async (req, res, next) => {
+export const getMyWarehouseProducts = async (req, res, next) => {
   const { filter, sort, limit, skip, select } = req.sanitizedQuery;
 
   const managedWarehouse = req.managedWarehouse
@@ -32,10 +31,10 @@ export const getMyWarehouseProducts = controllerWrapper(async (req, res, next) =
 
 
   sendApiResponse(res, 200, { data: products, dataLength: products.length });
-});
+}
 
 // Delete multiple products from my warehouse
-export const deleteProductsFromMyWarehouse = controllerWrapper(async (req, res, next) => {
+export const deleteProductsFromMyWarehouse = async (req, res, next) => {
   const productIDs = req.body; // array of productIDs
 
   if (!Array.isArray(productIDs) || productIDs.length === 0) {
@@ -76,10 +75,10 @@ export const deleteProductsFromMyWarehouse = controllerWrapper(async (req, res, 
   } finally {
     if (session) session.endSession();
   }
-});
+}
 
 // Add products in warehouse manager's warehouse (updates quantity if the product already exist)
-export const addProductsToMyWarehouse = controllerWrapper(async (req, res, next) => {
+export const addProductsToMyWarehouse = async (req, res, next) => {
   const productsToAdd = req.body;
 
   if(!Array.isArray(productsToAdd) || productsToAdd.length === 0){
@@ -162,4 +161,4 @@ export const addProductsToMyWarehouse = controllerWrapper(async (req, res, next)
     sendApiResponse(res, 200, {
       message: `Added ${updatedProducts.modifiedCount} product(s) successfully in your warehouse`,
     });
-});
+}

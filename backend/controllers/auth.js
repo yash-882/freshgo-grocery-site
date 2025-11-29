@@ -1,9 +1,13 @@
-import controllerWrapper from "../utils/controllerWrapper.js";
 import bcrypt from 'bcrypt';
 import UserModel from "../models/user.js";
 import CustomError from "../error-handling/customError.js";
 import { signAccessToken, signRefreshToken } from "../utils/helpers/jwt.js";
-import { findUserByQuery, bcryptCompare, generateOTP, verifyOTP, trackOTPLimit } from "../utils/helpers/auth.js";
+import { 
+    findUserByQuery, 
+    bcryptCompare, 
+    generateOTP, 
+    verifyOTP, 
+    trackOTPLimit } from "../utils/helpers/auth.js";
 import client from "../configs/redisClient.js";
 import sendEmail from "../utils/mailjet.js";
 import RedisService from "../utils/classes/redisService.js";
@@ -17,7 +21,7 @@ import jwt from "jsonwebtoken";
 import { promisify } from "util";
 
 // signup user after OTP validation
-export const signUp = controllerWrapper(async (req, res, next) => {
+export const signUp = async (req, res, next) => {
     const {email, OTP: enteredOTP} = req.body
 
     // a unique key is generated with the combination of 'purpose' and 'email' for Redis)
@@ -99,10 +103,10 @@ export const signUp = controllerWrapper(async (req, res, next) => {
     )
     .catch(err => console.log(err)) //silently catch the error (reason: req/res cycle is ended at this point)
 
-})
+}
 
 // sign-up controller
-export const validateForSignUp = controllerWrapper(async (req, res, next) => {
+export const validateForSignUp = async (req, res, next) => {
     const body = req.body;
 
     // if password is not confirmed correctly
@@ -166,10 +170,10 @@ export const validateForSignUp = controllerWrapper(async (req, res, next) => {
             email: body.email //attach email so the frontend can reuse it in the sign-up flow
         } 
     })
-})
+}
 
 // login controller
-export const login = controllerWrapper(async (req, res, next) => {
+export const login = async (req, res, next) => {
     const {email, password} = req.body;
 
    // check if user exists in DB with the given email
@@ -229,9 +233,9 @@ export const login = controllerWrapper(async (req, res, next) => {
         data: user,
     })
 
-})
+}
 
-export const logout = controllerWrapper(async (req, res, next) => {
+export const logout = async (req, res, next) => {
 
     // clear all tokens
     res.clearCookie('AT', { httpOnly: true, sameSite: 'strict'})
@@ -241,9 +245,9 @@ export const logout = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 201, {
         message: 'Logged out successfully'
     })
-})
+}
 
-export const changePassword = controllerWrapper(async (req, res, next) => {
+export const changePassword = async (req, res, next) => {
     const {currentPassword, newPassword, confirmNewPassword} = req.body;
 
     const user = req.user; // get user from request object
@@ -294,10 +298,10 @@ export const changePassword = controllerWrapper(async (req, res, next) => {
         message: 'Password changed successfully',
         data: user
     })
-})
+}
 
 // request OTP to change the password
-export const resetPassword = controllerWrapper(async (req, res, next) => {
+export const resetPassword = async (req, res, next) => {
 
     // get email from body
     const {email} = req.body || {}
@@ -339,10 +343,10 @@ sendApiResponse(res, 201, {
     data: {email} //attach email so the frontend can reuse it in the sign-up flow
 
 })
-})
+}
 
 // verifies the OTP and change password
-export const verifyPasswordResetOTP = controllerWrapper(async (req, res, next) => {
+export const verifyPasswordResetOTP = async (req, res, next) => {
 
     const {OTP: enteredOTP, email} = req.body;
 
@@ -398,10 +402,10 @@ export const verifyPasswordResetOTP = controllerWrapper(async (req, res, next) =
         message: 'Verification successful, Please enter a new password',
         data: {email}
     })
-})
+}
 
 // resets password using a valid password reset token
-export const submitNewPassword = controllerWrapper(async (req, res, next) => {
+export const submitNewPassword = async (req, res, next) => {
 
     const {email, newPassword, confirmNewPassword} = req.body 
 
@@ -469,7 +473,7 @@ export const submitNewPassword = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 201, {
         message: 'Password changed successfully'
     })
-})
+}
 
 export const requestEmailChange = async (req, res, next) => {
     const user = req.user; //ensure user is authenticated
@@ -518,7 +522,7 @@ export const requestEmailChange = async (req, res, next) => {
 
 
 // verifies the OTP and change password
-export const changeEmailWithOTP = controllerWrapper(async (req, res, next) => {
+export const changeEmailWithOTP = async (req, res, next) => {
 
     const user = req.user; //ensure user is authenticated
 
@@ -565,10 +569,10 @@ export const changeEmailWithOTP = controllerWrapper(async (req, res, next) => {
         message: 'Email changed successfully', 
         data: {email: user.email}
     })
-})
+}
 
 // delete my account (current user)
-export const deleteMyAccount = controllerWrapper(async (req, res, next) => {
+export const deleteMyAccount = async (req, res, next) => {
 
     // not verified via password checker middleware
     if(!req.verified){
@@ -624,11 +628,11 @@ export const deleteMyAccount = controllerWrapper(async (req, res, next) => {
         if (session)
             session.endSession() // end transaction session
     }
-})
+}
 
 // google OAUTH2 callback (the user is redirected to this callback
 // after clicking 'Allow access', then passport handles the auth flow)
-export const googleAuthCallback = controllerWrapper((req, res, next) => {
+export const googleAuthCallback = (req, res, next) => {
      passport.authenticate('google', { session: false }, (err, user, info) => {
 
         // (db error, passport error, unauthorized error)
@@ -682,4 +686,4 @@ export const googleAuthCallback = controllerWrapper((req, res, next) => {
         })
 
      })(req, res, next)
-})
+}

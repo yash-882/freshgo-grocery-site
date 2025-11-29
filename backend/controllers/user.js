@@ -2,7 +2,6 @@
 
 import UserModel from "../models/user.js";
 import CustomError from "../error-handling/customError.js";
-import controllerWrapper from "../utils/controllerWrapper.js";
 import sendApiResponse from "../utils/apiResponse.js";
 import { deleteCachedData } from "../utils/helpers/cache.js";
 import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
@@ -13,7 +12,7 @@ import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
 // ------------------------------------------------------------------------------------
 
 // normal user: update own profile 
-export const updateMyProfile = controllerWrapper(async (req, res, next) => {
+export const updateMyProfile = async (req, res, next) => {
     const userID = req.user._id; //current user
     const updates = req.body;
 
@@ -38,10 +37,10 @@ export const updateMyProfile = controllerWrapper(async (req, res, next) => {
         data: user, //updated profile
         message: 'Profile updated successfully',
     })
-})
+}
             
 // normal user: get own profile 
-export const getMyProfile = controllerWrapper(async (req, res, next) => {
+export const getMyProfile = async (req, res, next) => {
 
     // user is not authenticated (extra check for avoiding wrong serving of data)
   if (!req.user) {
@@ -54,12 +53,12 @@ export const getMyProfile = controllerWrapper(async (req, res, next) => {
   sendApiResponse(res, 200, {
       data: req.user
     })
-})
+}
 
 // CRUD for user's address
 
 // update address
-export const updateAddressByID = controllerWrapper(async (req, res, next) => {
+export const updateAddressByID = async (req, res, next) => {
     const user = req.user; //current user
     const addressID = req.params.id; //address ID
     const updates = req.body; //updates
@@ -96,10 +95,10 @@ export const updateAddressByID = controllerWrapper(async (req, res, next) => {
         data: user.addresses, // return the updated address
         message: 'Address updated successfully',
     });
-})
+}
 
 // add address 
-export const addAddress = controllerWrapper(async (req, res, next) => {
+export const addAddress = async (req, res, next) => {
     const user = req.user; //current user
     const newAddress = req.body; //new address to add
 
@@ -123,10 +122,10 @@ export const addAddress = controllerWrapper(async (req, res, next) => {
         message: 'Address added successfully',
     });
     
-})
+}
 
 // delete address
-export const deleteAddressByID = controllerWrapper(async (req, res, next) => {
+export const deleteAddressByID = async (req, res, next) => {
     const user = req.user; //current user
     const addressID = req.params.id; //address ID
 
@@ -163,4 +162,4 @@ export const deleteAddressByID = controllerWrapper(async (req, res, next) => {
         data: user.addresses, // return the updated address list
         message: 'Address deleted successfully',
     });
-})
+}

@@ -1,11 +1,10 @@
 import CustomError from "../../error-handling/customError.js";
 import OrderModel from "../../models/order.js";
 import sendApiResponse from "../../utils/apiResponse.js";
-import controllerWrapper from "../../utils/controllerWrapper.js";
 
 // Admin controls over orders
 
-export const getOrders = controllerWrapper(async (req, res, next) => {
+export const getOrders = async (req, res, next) => {
     const { filter, sort, limit, skip, select } = req.sanitizedQuery;
 
     const orders = await OrderModel.find(filter)
@@ -28,10 +27,10 @@ export const getOrders = controllerWrapper(async (req, res, next) => {
         data: orders,
         dataLength: orders.length,
     });
-});
+}
 
 // get order by ID
-export const getOrderByID = controllerWrapper(async (req, res, next) => {
+export const getOrderByID = async (req, res, next) => {
     const orderID = req.params.id;
 
     if (!orderID) {
@@ -57,10 +56,10 @@ export const getOrderByID = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         data: order
     });
-});
+}
 
 // delete order
-export const deleteOrderByID = controllerWrapper(async (req, res, next) => {
+export const deleteOrderByID = async (req, res, next) => {
     const orderID = req.params.id;
 
     if (!orderID) {
@@ -78,10 +77,10 @@ export const deleteOrderByID = controllerWrapper(async (req, res, next) => {
         message: 'Order deleted successfully',
         data: deletedOrder
     });
-});
+}
 
 // delete multiple orders
-export const deleteOrders = controllerWrapper(async (req, res, next) => {
+export const deleteOrders = async (req, res, next) => {
     const { filter, skip, limit } = req.sanitizedQuery;
 
     // filter is mandatory
@@ -107,10 +106,10 @@ export const deleteOrders = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         message: `Deleted ${deletionResult.deletedCount} order(s) successfully`,
     });
-});
+}
 
 // update order
-export const updateOrderByID = controllerWrapper(async (req, res, next) => {
+export const updateOrderByID = async (req, res, next) => {
     const orderID = req.params.id;
     const updates = req.body;
 
@@ -136,10 +135,10 @@ export const updateOrderByID = controllerWrapper(async (req, res, next) => {
         message: 'Order updated successfully',
         data: order
     });
-});
+}
 
 // update multiple order 
-export const updateOrders = controllerWrapper(async (req, res, next) => {
+export const updateOrders = async (req, res, next) => {
     const { filter, skip, limit } = req.sanitizedQuery;
     const updates = req.body;
 
@@ -183,11 +182,11 @@ export const updateOrders = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         message: `Updated ${updateResult.modifiedCount} order(s) successfully`,
     });
-});
+}
 
 
 // get order stats
-export const getOrderStats = controllerWrapper(async (req, res, next) => {
+export const getOrderStats = async (req, res, next) => {
   const [statusBreakdown, revenueByPayment, totalRevenue, totalOrders] = await Promise.all([
 
     // get count of each order status
@@ -230,4 +229,4 @@ export const getOrderStats = controllerWrapper(async (req, res, next) => {
       }
     }
   });
-});
+}

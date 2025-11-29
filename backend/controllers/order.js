@@ -3,7 +3,6 @@
 import mongoose from "mongoose";
 import OrderModel from "../models/order.js";
 import CustomError from "../error-handling/customError.js";
-import controllerWrapper from "../utils/controllerWrapper.js";
 import sendApiResponse from "../utils/apiResponse.js";
 import CartModel from "../models/cart.js";
 import { getCartSummary, populateCart } from '../utils/helpers/cart.js';
@@ -16,7 +15,7 @@ import { reserveStock } from "../utils/helpers/order.js";
 
 
 // create new order (currently supports only cash_on_delivery)
-export const createOrder = controllerWrapper(async (req, res, next) => {
+export const createOrder = async (req, res, next) => {
     const { addressID, paymentMethod } = req.body;
     const user = req.user;
 
@@ -139,18 +138,15 @@ export const createOrder = controllerWrapper(async (req, res, next) => {
     } finally {
         await session.endSession();
     }
-});
+}
 
 // Razorpay makes a POST request on this handler/route for the payment result
-export const razorpayVerify = controllerWrapper(async (req, res, next) => {
+export const razorpayVerify = async (req, res, next) => {
     const payload = req.body
     const razorpaySignature = req.headers["x-razorpay-signature"];
 
     console.log( 'payload',payload.payload);
     console.log( 'id',payload.payload?.payment?.entity?.order_id);
-
-    
-    
 
     const order = await OrderModel.findOne(
         { razorpayOrderID: payload.payload?.payment?.entity?.order_id })
@@ -236,10 +232,10 @@ export const razorpayVerify = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 201, {
         message: 'OK'
     })
-})
+}
 
 // get orders
-export const getOrders = controllerWrapper(async (req, res, next) => {
+export const getOrders = async (req, res, next) => {
     const user = req.user;
     const {filter, sort, limit, skip, select} = req.sanitizedQuery;
     
@@ -271,10 +267,10 @@ export const getOrders = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         data: sortedOrders
     });
-});
+}
 
 // get order by ID
-export const getOrderByID = controllerWrapper(async (req, res, next) => {
+export const getOrderByID = async (req, res, next) => {
     const orderID = req.params.id;
     const user = req.user;
 
@@ -299,10 +295,10 @@ export const getOrderByID = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         data: order
     });
-});
+}
 
 // cancel order (single order)
-export const cancelOrder = controllerWrapper(async (req, res, next) => {
+export const cancelOrder = async (req, res, next) => {
     const orderID = req.params.id;
     const user = req.user;
 
@@ -363,10 +359,10 @@ export const cancelOrder = controllerWrapper(async (req, res, next) => {
         message: 'Order cancelled successfully',
         data: orderToCancel
     });
-})
+}
 
 // handles acceptance or rejection of delivery when the order status is 'reached_destination'
-export const confirmDelivery = controllerWrapper(async (req, res, next) => {
+export const confirmDelivery = async (req, res, next) => {
     const user = req.user;
     const { isAccepted, id: orderID } = req.params;
 
@@ -436,4 +432,4 @@ export const confirmDelivery = controllerWrapper(async (req, res, next) => {
     } finally {
         await session.endSession();
     }
-});
+}

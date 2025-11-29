@@ -4,10 +4,10 @@
 import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
 import CategoryModel from "../models/productCategory.js";
 import sendApiResponse from "../utils/apiResponse.js";
-import controllerWrapper from "../utils/controllerWrapper.js";
+
 import { storeCachedData } from "../utils/helpers/cache.js";
 
-export const getCategories = controllerWrapper(async (req, res, next) => {
+export const getCategories = async (req, res, next) => {
     const categories = await CategoryModel.find();
 
     if(categories.length > 0){
@@ -19,9 +19,9 @@ export const getCategories = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         data: categories,
     })
-});
+}
 
-export const getCategoryByName = controllerWrapper(async (req, res, next) => {
+export const getCategoryByName = async (req, res, next) => {
     const categoryName = req.params.name;
     const category = await CategoryModel.findOne({ name: categoryName });
 
@@ -33,5 +33,5 @@ export const getCategoryByName = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         data: category,
     })
-});
+}
 

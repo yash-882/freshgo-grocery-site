@@ -1,10 +1,8 @@
 import UserModel from "../../models/user.js";
 import CustomError from "../../error-handling/customError.js";
-import controllerWrapper from "../../utils/controllerWrapper.js";
 import sendApiResponse from "../../utils/apiResponse.js";
 import { findUserByQuery } from "../../utils/helpers/auth.js";
 import mongoose from "mongoose";
-import ProductModel from "../../models/product.js";
 import CartModel from "../../models/cart.js";
 
 
@@ -13,7 +11,7 @@ import CartModel from "../../models/cart.js";
 // -------------------------------------------
 
 // get user by ID
-export const getUserByID = controllerWrapper(async (req, res, next) => {
+export const getUserByID = async (req, res, next) => {
     const userID = req.params.id; //user ID
 
     // throws custom error if user not found
@@ -24,10 +22,10 @@ export const getUserByID = controllerWrapper(async (req, res, next) => {
     data: user,
 })
 
-})
+}
 
 //  get multiple users
-export const getUsers = controllerWrapper(async (req, res, next) => {
+export const getUsers = async (req, res, next) => {
     
     const {filter, sort, limit, skip, select } = req.sanitizedQuery; //filter 
 
@@ -42,10 +40,10 @@ export const getUsers = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         data: users,
     })
-})
+}
 
 // update user by ID
-export const updateUserByID = controllerWrapper(async (req, res, next) => {
+export const updateUserByID = async (req, res, next) => {
     const userID = req.params.id; // getting user id from params
 
     const updates = req.body 
@@ -78,10 +76,10 @@ export const updateUserByID = controllerWrapper(async (req, res, next) => {
     data: user,
     message: 'User deleted successfully',
 })
-})
+}
 
 // update multiple users
-export const updateUsers = controllerWrapper(async (req, res, next) => {
+export const updateUsers = async (req, res, next) => {
     const {filter} = req.sanitizedQuery; // getting user id from params
 
     const updates = req.body; //changes for updation
@@ -103,7 +101,7 @@ export const updateUsers = controllerWrapper(async (req, res, next) => {
     sendApiResponse(res, 200, {
         message: `Updated ${users.modifiedCount} user(s) successfully`,
     })
-})
+}
 
 // delete a user by id
 export const deleteUserByID = async (req, res, next) => {

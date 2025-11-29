@@ -1,4 +1,3 @@
-import controllerWrapper from "../utils/controllerWrapper.js"
 import { findUserByQuery, bcryptCompare } from "../utils/helpers/auth.js"
 import CustomError from "../error-handling/customError.js"
 import { 
@@ -10,7 +9,7 @@ import cacheKeyBuilders from "../constants/cacheKeyBuilders.js"
 import UserModel from "../models/user.js"
 
 // verify password middleware
-export const verifyPassword = controllerWrapper(async (req, res, next) => {
+export const verifyPassword = async (req, res, next) => {
     const {password} = req.body
     const user = req.user
 
@@ -29,7 +28,7 @@ export const verifyPassword = controllerWrapper(async (req, res, next) => {
     // password was correct, set verified to true
     req.verified = true;
     next()
-})
+}
 
 // allow requests to protected routes based on roles
 // returns an async handler for express
@@ -70,7 +69,7 @@ export const checkRequiredFields = (requiredFields=[]) => {
 
 // middleware to authorize user and allow access to protected routes
 //additionally, it avoids login/signup requests if user is already logged in
-export const authorizeUser = controllerWrapper(async (req, res, next) => {
+export const authorizeUser = async (req, res, next) => {
 
     // get access and refresh tokens from cookies
     const {AT: accessToken, RT: refreshToken} = req.cookies;
@@ -155,4 +154,4 @@ if(reqForAuth) {
 
 next() //continue to the next middleware/controller
 
-})
+}
