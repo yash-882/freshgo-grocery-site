@@ -47,7 +47,7 @@ export const updateProductsOnCancellation = async (products, nearbyWarehouse) =>
 
 
 // creates data for single or multiple products
-export const getProductBodyForDB = (productData, images) => {
+export const getProductBodyForDB = (productData, images=[]) => {
     let productDataDB;
 
     // for multiple products
@@ -56,6 +56,7 @@ export const getProductBodyForDB = (productData, images) => {
     // adding score, image URLs to each product
     productDataDB = productData.map(product => ({
       ...product,
+      subcategory: undefined,
       price: Number(product.price), 
       score: 0, // ensures user cannot set the score manually
 
@@ -77,7 +78,8 @@ export const getProductBodyForDB = (productData, images) => {
   
   // for a single product
   productDataDB = { 
-    ...productData, 
+    ...productData,
+    subcategory: undefined,
     price: Number(productData.price),
     images: images.map(image => image.path), //returns URLs
     score: 0, // ensures user cannot set the score manually
@@ -105,3 +107,35 @@ export const limitProductCreation = (productData) => {
     );
   }
 };
+
+// limits admin from creating products more than the specified limit (AI)
+export const limitProductCreationAi = (productData) => {
+  const BULK_CREATION_LIMIT_AI = Number(process.env.BULK_CREATION_LIMIT_AI);
+
+  if (Array.isArray(productData) && productData.length > BULK_CREATION_LIMIT_AI) {
+    throw new CustomError(
+      'BadRequestError',
+      `Cannot create more than ${BULK_CREATION_LIMIT_AI} products at once when using AI auto-generation`,
+      400
+    );
+  }
+};
+
+// check missing fields that are required and dependen on admin's input
+export const checkProductMissingFields = (productData) => {
+  const missingFields = productData.some(p => {
+    const set = new Set(Object.keys(p))
+    return !(
+      set.has('description') &&
+      set.has('name') &&
+      set.has('price') &&
+      set.has('category')
+    )
+  })
+
+  if (missingFields)
+    throw new CustomError(
+      'BadRequestError',
+      'Missing required fields: description, name, price, category.',
+      400)
+}

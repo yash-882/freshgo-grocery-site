@@ -87,23 +87,24 @@ const ProductSchema = new Schema({
     },
     tags: {
         type: [String],
-        required: [true, 'Tags are required'],
         trim: true,
         lowercase: true,
+        default: [],
         validate: {
-            validator: function (tags) {
-                return tags.length >= 1 && tags.length <= 20
+            validator: function (tags=[]) {
+                return tags.length <= 10
             },
-            message: () => 'Tags (1-20 required)'
+            message: () => 'Max 10 Tags are allowed.'
         }
     },
     images: {
         type: [String],
+        defauly: [],
         validate: {
             validator: function (images=[]) {
                 return images.length <= 5
             },
-            message: () => 'Images (1-5 required)'
+            message: () => 'Max 5 Images are allowed.'
         }
     },
 

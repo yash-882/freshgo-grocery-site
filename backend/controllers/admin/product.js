@@ -7,60 +7,155 @@ import sendApiResponse from '../../utils/apiResponse.js';
 import { deleteCachedData, storeCachedData } from '../../utils/helpers/cache.js';
 import cacheKeyBuilders from '../../constants/cacheKeyBuilders.js';
 import cloudinary from '../../configs/cloudinary.js';
-import { getProductBodyForDB, limitProductCreation } from '../../utils/helpers/product.js';
+import { 
+    checkProductMissingFields,
+    getProductBodyForDB, 
+    limitProductCreation, 
+    limitProductCreationAi 
+} from '../../utils/helpers/product.js';
+import { generateProductFieldsAi } from '../../utils/ai/generateProductFieldsAi.js.js';
+
 
 // create products with images
 export const createProductsWithImages = controllerWrapper(async (req, res, next) => {
-    // Multer keeps the stringify data in req.body (express.json() can't parse it)
+    // Multer keeps JSON stringified
     const productData = JSON.parse(req.body.productData);
 
     if (!productData) {
         return next(new CustomError('BadRequestError', 'Product data is required', 400));
     }
 
-    // body is empty
     if (Object.keys(productData).length === 0)
-        return new CustomError('BadRequestError',
-            `Please enter all required fields! ${ProductModel.schema.requiredPaths()}`, 400)
+        return next(
+            new CustomError(
+                'BadRequestError',
+                `Please enter all required fields! ${ProductModel.schema.requiredPaths()}`,
+                400
+            )
+        );
 
     // throws error if products limit exceeds
-    limitProductCreation(productData)
+    limitProductCreation(productData);
 
-    // get product(s) body for insertion in DB
-    const productDataDB = getProductBodyForDB(productData, req.files, req.user);
+    // get sanitized product body for DB (with images)
+    const productDataDB = getProductBodyForDB(productData, req.files);
 
-    // creating product...
+    // AI AUTO-GENERATION LOGIC
+
+    let finalProductData;
+
+    // If ?autoGeneration exists
+    if (req.query.autoGeneration) {
+        const fieldsToAutoGenerate = Array.isArray(req.query.autoGeneration)
+            ? req.query.autoGeneration
+            : [req.query.autoGeneration];
+
+        // Validate product names
+        const invalidNames = productData.some(p => !p.name);
+
+        // disallowed fields
+        const notAllowedFields = fieldsToAutoGenerate.filter(
+            field => !['tags', 'description',].includes(field)
+        );
+
+        if (invalidNames || notAllowedFields.length > 0) {
+            return next(
+                new CustomError(
+                    'BadRequestError',
+                    invalidNames
+                        ? 'Product name is required for generating description'
+                        : `Field(s): ${notAllowedFields.join(', ')}, are not allowed for auto generation.`,
+                    400
+                )
+            );
+        }
+
+        // limit products for AI
+        limitProductCreationAi(productData);
+
+        // AI generation
+        finalProductData = await generateProductFieldsAi(productDataDB, fieldsToAutoGenerate);
+    }
+
+    else {
+
+        // throws err if required fields missing
+        checkProductMissingFields(productDataDB)
+
+        // let the AI generate 'subcategory' automatically
+        finalProductData = await generateProductFieldsAi(productDataDB, ['subcategory']);
+    }
+
+
+    // SAVE PRODUCT
     let createdProductData;
 
     try {
-        createdProductData = await ProductModel.create(productDataDB);
-    }
-    catch (err) {
-        // revert uploaded images by deleting them from Cloudinary
+        createdProductData = await ProductModel.create(finalProductData);
+    } catch (err) {
+        // revert uploaded images from Cloudinary
         await cloudinary.api.delete_resources(req.files.map(file => file.filename));
-
-        return next(err)
+        return next(err);
     }
 
-    //product created
     sendApiResponse(res, 201, {
         message: 'Product created successfully',
         data: createdProductData
-    })
-})
+    });
+});
+
 
 // create products without images
 export const createProducts = controllerWrapper(async (req, res, next) => {
-    const body = req.body;
+    const products = Array.isArray(req.body) ? req.body :  [req.body];
+
+    if(products.length === 0)
+        return next(new CustomError('BadRequestError', 'Product data is required', 400));
+    
 
     // throws error if products limit exceeds
-    limitProductCreation(body)
+    limitProductCreation(products)
 
-    const productData =  await ProductModel.create(body);
+    let productData;
+    const productBody = getProductBodyForDB(products);
+
+    // if auto-generation 
+    if(req.query.autoGeneration) {
+
+        // get fields to auto-generate
+        const fieldsToAutoGenerate = Array.isArray(req.query.autoGeneration) ? 
+        req.query.autoGeneration : [req.query.autoGeneration];
+        
+        const invalidNames = products.some(p => !p.name);
+        const notAllowedFields = fieldsToAutoGenerate.filter(field => !['tags', 'description' ].includes(field));
+
+        // throw err
+        if (invalidNames || notAllowedFields.length > 0)
+            return next(new CustomError(
+        'BadRequestError',
+        invalidNames ?
+        'Product name is required for generating description'
+                    : `Field(s): ${notAllowedFields.join(', ')}, are not allowed for auto generation.`,
+                400));
+                
+                limitProductCreationAi(products) //limit products for AI auto-generation
+                productData = await generateProductFieldsAi(productBody, fieldsToAutoGenerate)
+            }
+            
+            else{
+                // throws err if required fields missing
+                checkProductMissingFields(productBody)
+
+                // let the AI generate 'subcategory' automatically
+                productData = await generateProductFieldsAi(productBody, ['subcategory']);
+            }
+
+
+    const createdProducts =  await ProductModel.create(productData || products)
 
     sendApiResponse(res, 201, {
         message: 'Product created successfully',
-        data: productData
+        data: createdProducts
     })
 })   
 
