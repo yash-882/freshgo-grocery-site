@@ -4,7 +4,7 @@ class QueryOperations {
 
     constructor(query, schemaFields) {
         this.query = {...query}; // incoming query object from client
-        this.sortBy = query.sort || '-createdAt'; // default sort
+        this.sortBy = query.sort || '-score'; // default sort
         this.schemaFields = schemaFields; // object of valid document fields(contains Set of fields)
         this.limit = Number(query.limit) || 10 //default limit
         this.skip = Number(query.skip) || null //skip
