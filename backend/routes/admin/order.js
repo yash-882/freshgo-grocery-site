@@ -19,12 +19,13 @@ orderRouter.route('/')
   .delete(handleQuery(schemaRegistery.order), deleteOrders) // delete multiple orders
   .patch(handleQuery(schemaRegistery.order), updateOrders); // update multiple orders
 
+
+  // order stats
+orderRouter.get('/stats', getOrderStats);
+
 orderRouter.route('/:id')
   .get(getOrderByID)      // get order by ID
   .patch(updateOrderByID) // update order by ID
   .delete(deleteOrderByID); // delete order by ID
-
-// order stats
-orderRouter.get('/stats', getOrderStats);
 
 export default orderRouter;
