@@ -62,7 +62,7 @@ export const getProductsAgg = async ({
 
         // projection
         {
-            $project: select ? select : {
+            $project: select && Object.keys(select).length ? select : {
                 warehouses: 0,
                 matchedWarehouse: 0,
                 tags: 0,

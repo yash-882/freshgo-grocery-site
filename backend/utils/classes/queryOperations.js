@@ -6,8 +6,8 @@ class QueryOperations {
         this.query = {...query}; // incoming query object from client
         this.sortBy = query.sort || '-score'; // default sort
         this.schemaFields = schemaFields; // object of valid document fields(contains Set of fields)
-        this.limit = Number(query.limit) || 10 //default limit
-        this.skip = Number(query.skip) || null //skip
+        this.limit = Number(query.limit) || 12 //default limit
+        this.skip = Number(query.skip) || 0 //skip
         this.select = query.select || null; //select
     }
 
@@ -149,6 +149,7 @@ class QueryOperations {
     //Convert sort string to MongoDB-compatible format
     createSortFields() {
         if (!this.sortBy) return;
+            
 
             const fields = this.sortBy.split(",");
             
@@ -160,12 +161,7 @@ class QueryOperations {
             
             const sortSet = new Set(validFields);
             
-            // ensure -createdAt fallback
-            if (![...sortSet].some((f) => f.includes("createdAt"))) {
-                sortSet.add("-createdAt");
-            }
-            
-            // create sorting fields for mongoose .sort() method
+            // create sorting fields
             //e.g: '-price', 'createdAt' -> {price: -1, createdAt: 1}
 
             let sortParams = {};
@@ -186,7 +182,6 @@ createSelectFields() {
 
     const fields = this.select.split(',')
 
-    
     // allow specific field access based on role
     const allowedFields = this.schemaFields.allFields
 
@@ -196,7 +191,11 @@ createSelectFields() {
        return f.startsWith('-') ? allowedFields.has(f.slice(1)) : allowedFields.has(f);
     })
 
-    if(selectedFields.length === 0) return
+    // default
+    if(selectedFields.length === 0) {
+        this.select = {}
+        return;
+    }
 
     // build object for Mongoose .select({ field1: 1, field2: 1 })
     let selectParams = {};
