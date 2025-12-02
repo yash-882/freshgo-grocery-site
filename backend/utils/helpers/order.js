@@ -29,8 +29,6 @@ export const reserveStock = async (products, user, warehouse, session) => {
 
     // if some products could not be updated due to insufficient stock
     if (bulkResult.matchedCount < products.length) {
-
-        log('reserve stock: insufficient stock, throwing error');
         throw new CustomError(
             'BadRequestError',
             'Some products just went out of stock. Refresh your cart to continue.',

@@ -5,7 +5,7 @@ import OrderModel from "../models/order.js";
 import CustomError from "../error-handling/customError.js";
 import sendApiResponse from "../utils/apiResponse.js";
 import CartModel from "../models/cart.js";
-import { getCartSummary, populateCart } from '../utils/helpers/cart.js';
+import { getCartSummary, populateCart, validateStock } from '../utils/helpers/cart.js';
 import { startOrderProcessing } from "../queues/order.js";
 import { addEmailToQueue } from "../queues/email.js";
 import { updateProductsOnCancellation, updateProductsOnDelivery } from "../utils/helpers/product.js";
@@ -43,14 +43,17 @@ export const createOrder = async (req, res, next) => {
                 'The provided address was not found in your saved addresses', 400));
     }
 
-    // if (cashOnDelivery !== true) {
-    //     return next(
-    //         new CustomError('BadRequestError', 
-    //             'Currently accepting cash on delivery only', 400));
-    // }
+
+    // exclude out of stock products
+    const products = cart.products.filter(item => item.warehouseQuantity > 0)
+
+    if(products.length === 0){
+         return next(
+            new CustomError('BadRequestError', 'All items in your cart are out of stock!', 400));
+    }
     
     // get total amount of the cart
-    const grandTotal = getCartSummary(cart.products).grandTotal;
+    const grandTotal = getCartSummary(products).grandTotal;
 
     const paymentMethodEnums = OrderModel.schema.path('paymentMethod').enumValues
 
@@ -84,7 +87,7 @@ export const createOrder = async (req, res, next) => {
                         paymentMethod,
                         orderStatus: paymentMethod === 'cash_on_delivery' ? 'placed' : 'pending',
                         razorpayOrderID: paymentMethod === 'cash_on_delivery' ? null : razorpayOrder.id,
-                        products: cart.products.map(item => ({
+                        products: products.map(item => ({
                             product: item.productDetails._id,
                             quantity: item.requestedQuantity,
                             priceAtPurchase: item.productDetails.price,
@@ -97,7 +100,7 @@ export const createOrder = async (req, res, next) => {
             )[0];
             
             // reserve stock and clear cart
-            await reserveStock(cart.products, user, req.nearbyWarehouse, session);
+            await reserveStock(products, user, req.nearbyWarehouse, session);
 
             // clear cart
             await CartModel.findOneAndUpdate(
@@ -111,7 +114,7 @@ export const createOrder = async (req, res, next) => {
             // begin order flow ('processing' to 'delivered')
                 await startOrderProcessing({
                     orderID: newOrder._id,
-                    productsName: cart.products.map(item => item.productDetails.name),
+                    productsName: products.map(item => item.productDetails.name),
                     email: user.email,
                     createdAt: newOrder.createdAt
                 })
