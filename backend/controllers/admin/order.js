@@ -1,5 +1,6 @@
 import CustomError from "../../error-handling/customError.js";
 import OrderModel from "../../models/order.js";
+import ProductModel from "../../models/product.js";
 import sendApiResponse from "../../utils/apiResponse.js";
 
 // Admin controls over orders
@@ -187,46 +188,91 @@ export const updateOrders = async (req, res, next) => {
 
 // get order stats
 export const getOrderStats = async (req, res, next) => {
-  const [statusBreakdown, revenueByPayment, totalRevenue, totalOrders] = await Promise.all([
 
-    // get count of each order status
-    OrderModel.aggregate([
-      { $group: { _id: '$orderStatus', count: { $sum: 1 } } },
-      { $project: { status: '$_id', count: 1, _id: 0 } }
+    const { time } = req.query || {}
+
+    if(time && !['last_30_days', 'this_year', 'last_day'].includes(time)){
+        return next(new CustomError('BadRequestError', 'Invalid param value!', 400))
+    }
+
+      // build time filter
+  const dateFilter = {};
+  switch (time) {
+    case 'year_to_date':
+
+    // current year (january to the current month)
+      const currentYear = new Date().getFullYear();
+      dateFilter.$gte = new Date(currentYear, 0, 1);
+      break;
+
+      //   last 30 days
+      case 'last_30_days':
+          dateFilter.$gte = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+          break;
+
+        //   last day
+      case 'last_day':
+          dateFilter.$gte = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  }
+
+  const matchStage = {
+    orderStatus: 'delivered', 
+    ...(time && { createdAt: dateFilter })
+  };
+
+    const [statusBreakdown, revenueSummary,] = await Promise.all([
+
+        // group by order status
+        OrderModel.aggregate([
+            { $match: matchStage.createdAt ? { createdAt: matchStage.createdAt } : {} },
+            { $group: { _id: '$orderStatus', count: { $sum: 1 } } },
+            { $project: { status: '$_id', count: 1, _id: 0 } }
+        ]),
+
+        // revenue summary
+        OrderModel.aggregate([
+            {
+                $match: matchStage
+            },
+
+            // group by payment methods (upi, cash_on_delivery and card)
+            {
+                $group: {
+                    _id: '$paymentMethod',
+                    ordersPerMethod: { $sum: 1 }, 
+                    revenuePerMethod: { $sum: '$totalAmount' },
+                }
+            },
+            
+            // calculate revenue per payment method and total revenue
+            {
+                $group: {
+                    _id: null,
+                    methods: {
+                        $push: {
+                            paymentMethod: '$_id',
+                            ordersCount: '$ordersPerMethod',
+                            revenue: '$revenuePerMethod'
+                        }
+                    },
+                    totalRevenue: { $sum: "$revenuePerMethod" },
+                }
+            },
+            {
+                $project: {
+                    _id: 0
+                }
+            }
     ]),
-
-    // get count and revenue of successful delivered orders for each payment method
-    OrderModel.aggregate([
-      { $match: { orderStatus: 'delivered' } },
-      {
-        $group: {
-          _id: '$paymentMethod',
-          count: { $sum: 1 },
-          revenue: { $sum: '$totalAmount' }
-        }
-      },
-      { $project: { paymentMethod: '$_id', count: 1, revenue: 1, _id: 0 } }
-    ]),
-
-    // total revenue from delivered orders
-    OrderModel.aggregate([
-      { $match: { orderStatus: 'delivered' } },
-      { $group: { _id: null, total: { $sum: '$totalAmount' } } },
-      { $project: { total: 1, _id: 0 } }
-    ]),
-
-    // total orders
-    OrderModel.countDocuments()
   ]);
 
   sendApiResponse(res, 200, {
     data: {
+        // result 
       statusBreakdown: statusBreakdown,
       summary: {
-        revenueByPayment: revenueByPayment,
-        totalOrders,
-        totalRevenue: totalRevenue[0]?.total || 0
+          revenueSummary: revenueSummary[0]?.methods || [],
+          totalRevenue: revenueSummary[0]?.totalRevenue || 0,
       }
-    }
-  });
+}})
 }
