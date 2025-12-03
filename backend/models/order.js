@@ -101,6 +101,12 @@ const OrderSchema = new Schema({
         
         required: [true, 'Payment method is required']
     },
+
+    expectedDeliveryAt: {
+        type: Date,
+        default: null
+    },
+
     createdAt: {
         type: Date,
         default: Date.now
@@ -120,6 +126,49 @@ OrderSchema.virtual('totalItemsQuantity',).get(function(){
 OrderSchema.virtual('totalItems').get(function() {
     return this.products.length;
 })
+
+// readable date of delivery
+OrderSchema.virtual('readableDeliveryTime').get(function() {
+    const date = this.expectedDeliveryAt;
+    if (!date) return '';
+
+    // Indian format (in deployement, the server could be hosted in different region)
+
+    // Get IST offset in milliseconds (UTC+5:30 = 19800000ms)
+    const IST_OFFSET = 5.5 * 60 * 60 * 1000;
+    
+    // Convert to IST by adjusting the UTC time
+    const istTime = new Date(date.getTime() + IST_OFFSET);
+    const nowISTTime = new Date(Date.now() + IST_OFFSET);
+
+    // Check if it's today in IST (compare UTC representations of IST dates)
+    const isToday =
+        istTime.getUTCDate() === nowISTTime.getUTCDate() &&
+        istTime.getUTCMonth() === nowISTTime.getUTCMonth() &&
+        istTime.getUTCFullYear() === nowISTTime.getUTCFullYear();
+
+    // Format time in IST
+    const timeString = date.toLocaleTimeString("en-IN", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Asia/Kolkata",
+    });
+
+    if (isToday) {
+        return `Today, ${timeString}`;
+    }
+
+    // Format date in IST
+    const dateString = date.toLocaleDateString("en-IN", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "Asia/Kolkata",
+    });
+
+    return `${dateString}, ${timeString}`;
+});
 
 const OrderModel = model('order', OrderSchema)
 

@@ -1,3 +1,4 @@
+import nextStatusMap from "../../constants/orderNextStatuses.js";
 import CustomError from "../../error-handling/customError.js";
 import ProductModel from "../../models/product.js";
 
@@ -35,4 +36,24 @@ export const reserveStock = async (products, user, warehouse, session) => {
             400
         );
     }
+}
+
+// returns remaining delivery time in milliseconds
+export const getRemainingDeliveryTime = (orderStatus='placed') => {
+   let deliveryRemainingTime = 0;
+        let statuses = Object.keys(nextStatusMap);
+        
+        // get further statuses
+        const remainingStatuses = statuses.slice(statuses.indexOf(orderStatus))
+
+        // process completed
+        if(remainingStatuses.length === 0) 
+            return; 
+        
+        // calculate remaining delivery time
+        remainingStatuses.forEach(status => {
+            deliveryRemainingTime += nextStatusMap[status].finishesIn
+        })
+
+        return deliveryRemainingTime
 }

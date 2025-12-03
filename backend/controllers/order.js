@@ -11,7 +11,7 @@ import { addEmailToQueue } from "../queues/email.js";
 import { updateProductsOnCancellation, updateProductsOnDelivery } from "../utils/helpers/product.js";
 import razorpay from "../configs/razorpay.js";
 import crypto from "crypto";
-import { reserveStock } from "../utils/helpers/order.js";
+import { getRemainingDeliveryTime, reserveStock } from "../utils/helpers/order.js";
 
 
 // create new order (currently supports only cash_on_delivery)
@@ -93,7 +93,9 @@ export const createOrder = async (req, res, next) => {
                             priceAtPurchase: item.productDetails.price,
                         })),
                         warehouse: req.nearbyWarehouse._id,
-                        totalAmount: grandTotal
+                        totalAmount: grandTotal,
+                        expectedDeliveryAt: paymentMethod === 'cash_on_delivery' ? 
+                         new Date(Date.now() + getRemainingDeliveryTime('placed')) : null
                     }],
                     { session }
                 )
@@ -220,6 +222,8 @@ export const razorpayVerify = async (req, res, next) => {
         order.paymentStatus = 'paid';
         order.orderStatus = 'placed';
 
+        // set remaining delay
+        order.expectedDeliveryAt = new Date(Date.now() + getRemainingDeliveryTime('placed'))
 
         await order.save({ session: session });
 
