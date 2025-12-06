@@ -1,14 +1,10 @@
 import multer from 'multer'
-import cloudinary from './cloudinary.js'
-import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import CustomError from '../error-handling/customError.js'
 
 function uploader({
     allowedFileFormats = [],
-    saveFormat, 
     fileSize = 1024 * 1024 * 1, // 1MB default
-    folder = 'default',
-    fileType = 'unknown'
+    fileType
 }) {
 
   // runtime error 
@@ -16,28 +12,14 @@ function uploader({
         throw new Error('`allowedFileFormats` cannot be empty!');
     }
 
-    // runtime error
-    if(!allowedFileFormats.includes(saveFormat)){
-        throw new Error('`saveFormat` must be one of `allowedFileFormats`');
-    }
-
-    // cloudinary storage for multer
-    const storage = new CloudinaryStorage({
-        cloudinary: cloudinary,
-        params: () =>  {
-            return {
-                folder: folder, //folder in Cloudinary
-                format: saveFormat, // tells cloudinary to convert all files to the specified format
-            }
-        },
-    })
-
     // used for setup multer middleware
     const uploads = multer({
-        storage,
+        storage: multer.memoryStorage(),
         limits: {
             fileSize, //max file size
-            files: 5 //max number of files
+
+            //max number of files (A product can have upto 5 images)
+            files: process.env.BULK_CREATION_LIMIT_PER_REQUEST * 5
         },
 
         // check if file is an image

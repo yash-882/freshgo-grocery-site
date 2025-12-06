@@ -9,8 +9,10 @@ import cloudinary from '../../configs/cloudinary.js';
 import { 
     checkProductMissingFields,
     getProductBodyForDB, 
+    limitImageUploads, 
     limitProductCreation, 
-    limitProductCreationAi 
+    limitProductCreationAi, 
+    streamUpload
 } from '../../utils/helpers/product.js';
 import { generateProductFieldsAi } from '../../utils/ai/generateProductFieldsAi.js.js';
 
@@ -18,39 +20,57 @@ import { generateProductFieldsAi } from '../../utils/ai/generateProductFieldsAi.
 // create products with images
 export const createProductsWithImages = async (req, res, next) => {
     // Multer keeps JSON stringified
-    const productData = JSON.parse(req.body.productData);
+    const productData = JSON.parse(req.body.productData || '{}');
 
-    if (!productData) {
+    if (Object.keys(productData).length === 0) {
         return next(new CustomError('BadRequestError', 'Product data is required', 400));
     }
 
-    if (Object.keys(productData).length === 0)
-        return next(
-            new CustomError(
-                'BadRequestError',
-                `Please enter all required fields! ${ProductModel.schema.requiredPaths()}`,
-                400
-            )
-        );
+    if (!req.files || req.files.length === 0) {
+        return next(new CustomError('BadRequestError', 'Product images are required', 400));
+    }
 
-    // throws error if products limit exceeds
+    // limit checks, throws error if limits exceeded
     limitProductCreation(productData);
+    limitImageUploads(productData, req.files);
+
+    // UPLOAD IMAGES TO CLOUDINARY
+
+    let createdProductData;
+    let uploadedImages = [];
+    let session;
+    try{
+
+    console.time('Images upload');
+    const imagesUploadPromises = req.files.map(f => 
+        streamUpload(f.buffer, f.originalname)
+    );
+
+    // wait for all images to be uploaded
+    uploadedImages = await Promise.all(imagesUploadPromises);
+    console.timeEnd('Images upload');
+
 
     // get sanitized product body for DB (with images)
-    const productDataDB = getProductBodyForDB(productData, req.files);
+    const productDataDB = getProductBodyForDB(productData, uploadedImages.map(img => ({
+        secure_url: img.secure_url,
+        originalname: img.display_name
+    })));
 
     // AI AUTO-GENERATION LOGIC
 
     let finalProductData;
 
-    // If ?autoGeneration exists
+    console.time('AI Generation');
+    // If ?autoGeneration exists (fields to auto generate)
     if (req.query.autoGeneration) {
         const fieldsToAutoGenerate = Array.isArray(req.query.autoGeneration)
             ? req.query.autoGeneration
-            : [req.query.autoGeneration];
+            : [req.query.autoGeneration || 'invalid'];
 
         // Validate product names
-        const invalidNames = productData.some(p => !p.name);
+        const invalidNames = Array.isArray(productData) ? 
+        productData.some(p => !p.name) : !productData.name;
 
         // disallowed fields
         const notAllowedFields = fieldsToAutoGenerate.filter(
@@ -69,38 +89,56 @@ export const createProductsWithImages = async (req, res, next) => {
             );
         }
 
-        // limit products for AI
         limitProductCreationAi(productData);
+        checkProductMissingFields(productDataDB, fieldsToAutoGenerate)
 
         // AI generation
-        finalProductData = await generateProductFieldsAi(productDataDB, fieldsToAutoGenerate);
+        finalProductData = await generateProductFieldsAi(
+            productDataDB, 
+            [...fieldsToAutoGenerate, 'subcategory']
+        );
     }
 
     else {
 
         // throws err if required fields missing
-        checkProductMissingFields(productDataDB)
+        checkProductMissingFields(productDataDB, ['subcategory'])
 
-        // let the AI generate 'subcategory' automatically
+        // let the AI generate 'subcategory' automatically (Default)
         finalProductData = await generateProductFieldsAi(productDataDB, ['subcategory']);
     }
+    console.timeEnd('AI Generation');
 
-
-    // SAVE PRODUCT
-    let createdProductData;
-
-    try {
-        createdProductData = await ProductModel.create(finalProductData);
-    } catch (err) {
-        // revert uploaded images from Cloudinary
-        await cloudinary.api.delete_resources(req.files.map(file => file.filename));
-        return next(err);
-    }
-
-    sendApiResponse(res, 201, {
+    // SAVE PRODUCTS TO DB WITH TRANSACTION
+    console.time('DB Transaction');
+    session = await ProductModel.startSession();
+    await session.withTransaction(async () => {
+        createdProductData = await ProductModel.create(finalProductData, { session, ordered: true });
+    });
+    console.timeEnd('DB Transaction');
+    
+    return sendApiResponse(res, 201, {
         message: 'Product created successfully',
         data: createdProductData
     });
+
+}
+    catch(err){
+        if(uploadedImages && uploadedImages.length > 0){
+
+            // delete uploaded images from cloudinary on error
+            cloudinary.api.delete_resources(uploadedImages.map(img => img.public_id))
+                .catch(cleanupErr => console.error('Cloudinary cleanup failed:', cleanupErr));
+        }
+
+        return next(err);
+    }
+
+    finally{
+        if(session){
+            session.endSession();
+        }
+    }
 }
 
 

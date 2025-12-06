@@ -36,8 +36,8 @@ productRouter.post('/with-images',
         folder: 'products',
         fileType: 'image',
         saveFormat: 'jpeg', //save images in jpeg format
-        // 5 images per product
     }).array('images'),
+
     createProductsWithImages) //create product
 
     productRouter.post('/', createProducts) //create product without images

@@ -3,6 +3,7 @@
 import mongoose from "mongoose";
 import ProductModel from "../../models/product.js";
 import CustomError from "../../error-handling/customError.js";
+import cloudinary from "../../configs/cloudinary.js";
 
 // updates products after successful delivery
 export const updateProductsOnDelivery = async products => {
@@ -68,7 +69,7 @@ export const getProductBodyForDB = (productData, images=[]) => {
       // by matching the uniquePrefix.
       
       images: images.filter(file => file.originalname.startsWith(product.uniquePrefix))
-      .map(file => file.path), //returns URLs
+      .map(file => file.secure_url), //returns URLs
       
       // createdAt is automatically set on creation and locked against modification
       createdAt: undefined  
@@ -81,7 +82,10 @@ export const getProductBodyForDB = (productData, images=[]) => {
     ...productData,
     subcategory: undefined,
     price: Number(productData.price),
-    images: images.map(image => image.path), //returns URLs
+
+    images: images.filter(file => file.originalname.startsWith(productData.uniquePrefix))
+    .map(image => image.secure_url), //returns URLs
+
     score: 0, // ensures user cannot set the score manually
 
     // createdAt is automatically set on creation and locked against modification
@@ -96,7 +100,7 @@ return productDataDB;
 
 
 // limits admin from creating products more than the specified limit
-export const limitProductCreation = (productData) => {
+export const limitProductCreation = (productData, images) => {
   const BULK_CREATION_LIMIT = Number(process.env.BULK_CREATION_LIMIT_PER_REQUEST);
 
   if (Array.isArray(productData) && productData.length > BULK_CREATION_LIMIT) {
@@ -107,7 +111,7 @@ export const limitProductCreation = (productData) => {
     );
   }
 };
-
+ 
 // limits admin from creating products more than the specified limit (AI)
 export const limitProductCreationAi = (productData) => {
   const BULK_CREATION_LIMIT_AI = Number(process.env.BULK_CREATION_LIMIT_AI);
@@ -121,17 +125,57 @@ export const limitProductCreationAi = (productData) => {
   }
 };
 
+export const limitImageUploads = (productData, images) => {
+  const MAX_IMAGES_PER_PRODUCT = Number(process.env.MAX_IMAGES_PER_PRODUCT);
+
+  if(Array.isArray(productData)){
+  if (images.length > MAX_IMAGES_PER_PRODUCT * productData.length) {
+    throw new CustomError(
+      'BadRequestError',
+      `Cannot upload more than ${MAX_IMAGES_PER_PRODUCT} images per product`,
+      400
+    );
+  } 
+}  
+
+  else{
+    if (images.length > MAX_IMAGES_PER_PRODUCT) {
+      throw new CustomError(
+        'BadRequestError',
+        `Cannot upload more than ${MAX_IMAGES_PER_PRODUCT} images for a product`,
+        400
+      );
+    }
+}
+}
+
 // check missing fields that are required and dependen on admin's input
-export const checkProductMissingFields = (productData) => {
-  const missingFields = productData.some(p => {
-    const set = new Set(Object.keys(p))
-    return !(
-      set.has('description') &&
-      set.has('name') &&
-      set.has('price') &&
-      set.has('category')
-    )
+export const checkProductMissingFields = (productData, exceptions=[]) => {
+
+  const exceptionsSet = new Set(exceptions)
+
+  const required = ['name', 'price', 'category', 'description'];
+  let missingFields = true;
+
+  if(Array.isArray(productData)){
+  missingFields = productData.some(p => {
+
+    const fieldsSet = new Set(Object.keys(p || {}))
+
+    return required.every(field =>
+      fieldsSet.has(field) && !exceptionsSet.has(field)
+    );
   })
+
+} 
+
+else{
+
+    const fieldsSet = new Set(Object.keys(productData || {}))
+
+    missingFields = required.every(field =>
+      fieldsSet.has(field) && !exceptionsSet.has(field))
+}
 
   if (missingFields)
     throw new CustomError(
@@ -139,3 +183,37 @@ export const checkProductMissingFields = (productData) => {
       'Missing required fields: description, name, price, category.',
       400)
 }
+
+// uploads a file buffer to cloudinary and returns the result
+export const streamUpload = (fileBuffer, fileName) => {
+
+  return new Promise((res, rej) => {
+
+    // generate public ID by removing file extension and replacing invalid chars
+    const publicId = fileName
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    // cloudinary upload options
+    const options = {
+      folder: 'products',
+      // format: 'jpeg',
+      public_id: publicId,
+      overwrite: true
+    }
+
+    const stream = cloudinary.uploader.upload_stream(options, (err, result) => {
+      if (err) {
+  
+        return rej(err);
+      }
+      
+      else {
+        res(result)
+      }
+    });
+    
+    // finalize the upload
+    stream.end(fileBuffer);
+  });
+};
