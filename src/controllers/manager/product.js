@@ -1,6 +1,6 @@
 // controllers used by warehouse_manager
 
-import ProductModel from './../../models/product.js';
+import ProductModel from '../../models/product.js';
 import CustomError from '../../error-handling/customError.js';
 import sendApiResponse from '../../utils/apiResponse.js';
 import mongoose from 'mongoose';

@@ -1,3 +1,3 @@
 # BACKEND
-/backend/node_modules
-/backend/configs/file.env
+/node_modules/
+/src/configs/file.env

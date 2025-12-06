@@ -4,7 +4,7 @@ import CustomError from '../error-handling/customError.js';
 import sendApiResponse from '../utils/apiResponse.js';
 import { storeCachedData } from '../utils/helpers/cache.js';
 import mongoose from 'mongoose';
-import OrderModel from './../models/order.js'
+import OrderModel from '../models/order.js'
 import { getProductsAgg } from '../utils/queries/product.js';
 
 // search products 

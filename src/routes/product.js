@@ -12,7 +12,7 @@ import { checkCachedData } from '../middlewares/cache.js';
 const productRouter = Router();
 import { findNearbyWarehouse } from '../middlewares/findNearbyWarehouse.js';
 import { typoCorrection } from '../middlewares/ai/typoCorrection.js';
-import {authorizeUser} from './../middlewares/auths.js'
+import {authorizeUser} from '../middlewares/auths.js'
 
 productRouter.use(findNearbyWarehouse);
 
