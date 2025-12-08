@@ -1,3 +1,4 @@
+import productCategories from "../../constants/productCategories.js";
 import CustomError from "../../error-handling/customError.js";
 import generateAiResponse from "../../utils/aiChat.js";
 
@@ -12,9 +13,19 @@ export const typoCorrection = async (req, res, next) => {
     }
 
     const corrected = await generateAiResponse(
-        `You are a grocery assistant. Correct the following search value: ${searchValue}.
-        Reply with only the corrected search value. No explanations, no text outside the corrected search value.
-        If the search value is already correct, return it as it is.`);
+        `Your task is to correct grocery item names.
+Return ONLY the corrected item name with no extra text.
+
+Rules:
+1. Fix spelling mistakes if they are clearly referring to a known grocery item.
+2. If the input is already valid, return it unchanged.
+3. If the input is unclear or not a grocery item, return a common grocery item that starts with the text of the search value.,
+   taken only from the product subcategories(categories if not found in subcategories) list provided below.
+4. Do not add explanations or any other text.
+
+Product categories include: ${JSON.stringify(productCategories)}.
+
+Input: ${searchValue}`)
 
     // skip correction for AI failure
     if (!corrected) {
