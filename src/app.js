@@ -23,10 +23,14 @@ const CustomError = require('./error-handling/customError.js');
 const passport = require('passport');
 const cookieParser = require('cookie-parser');
 const qs = require('qs');
+const helmet = require('helmet');
 
 // configs
 const setCors = require('./configs/cors.js');
 const { apiRoot, getApiRoutes } = require('./controllers/apiEntry.js');
+
+// set security HTTP headers
+app.use(helmet())
 
 // allow requests from the specified client origin and include credentials (like cookies) 
 app.use(setCors())
@@ -38,6 +42,7 @@ app.set("query parser", query => qs.parse(query))
 app.use(express.json())
 
 const rateLimit = require('express-rate-limit');
+const { login } = require('./controllers/auth.js');
 
 // rate limiter
 app.use(rateLimit({
