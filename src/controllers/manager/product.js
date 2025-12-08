@@ -1,13 +1,13 @@
 // controllers used by warehouse_manager
 
-import ProductModel from '../../models/product.js';
-import CustomError from '../../error-handling/customError.js';
-import sendApiResponse from '../../utils/apiResponse.js';
-import mongoose from 'mongoose';
-import { storeCachedData } from '../../utils/helpers/cache.js';
+const ProductModel = require('../../models/product.js');
+const CustomError = require('../../error-handling/customError.js');
+const sendApiResponse = require('../../utils/apiResponse.js');
+const mongoose = require('mongoose');
+const { storeCachedData } = require('../../utils/helpers/cache.js');
 
 // Get my warehouse products (warehouse_manager)
-export const getMyWarehouseProducts = async (req, res, next) => {
+const getMyWarehouseProducts = async (req, res, next) => {
   const { filter, sort, limit, skip, select } = req.sanitizedQuery;
 
   const managedWarehouse = req.managedWarehouse
@@ -34,7 +34,7 @@ export const getMyWarehouseProducts = async (req, res, next) => {
 }
 
 // Delete multiple products from my warehouse
-export const deleteProductsFromMyWarehouse = async (req, res, next) => {
+const deleteProductsFromMyWarehouse = async (req, res, next) => {
   const productIDs = req.body; // array of productIDs
 
   if (!Array.isArray(productIDs) || productIDs.length === 0) {
@@ -78,7 +78,7 @@ export const deleteProductsFromMyWarehouse = async (req, res, next) => {
 }
 
 // Add products in warehouse manager's warehouse (updates quantity if the product already exist)
-export const addProductsToMyWarehouse = async (req, res, next) => {
+const addProductsToMyWarehouse = async (req, res, next) => {
   const productsToAdd = req.body;
 
   if(!Array.isArray(productsToAdd) || productsToAdd.length === 0){
@@ -162,3 +162,5 @@ export const addProductsToMyWarehouse = async (req, res, next) => {
       message: `Added ${updatedProducts.modifiedCount} product(s) successfully in your warehouse`,
     });
 }
+
+module.exports = { getMyWarehouseProducts, deleteProductsFromMyWarehouse, addProductsToMyWarehouse }

@@ -1,5 +1,5 @@
-import multer from 'multer'
-import CustomError from '../error-handling/customError.js'
+const multer = require('multer')
+const CustomError = require('../error-handling/customError.js')
 
 function uploader({
     allowedFileFormats = [],
@@ -49,4 +49,4 @@ function uploader({
 }
 
 
-export default uploader;
+module.exports = uploader;

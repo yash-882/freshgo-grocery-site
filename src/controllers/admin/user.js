@@ -1,17 +1,16 @@
-import UserModel from "../../models/user.js";
-import CustomError from "../../error-handling/customError.js";
-import sendApiResponse from "../../utils/apiResponse.js";
-import { findUserByQuery } from "../../utils/helpers/auth.js";
-import mongoose from "mongoose";
-import CartModel from "../../models/cart.js";
-
+const UserModel = require("../../models/user.js");
+const CustomError = require("../../error-handling/customError.js");
+const sendApiResponse = require("../../utils/apiResponse.js");
+const { findUserByQuery } = require("../../utils/helpers/auth.js");
+const mongoose = require("mongoose");
+const CartModel = require("../../models/cart.js");
 
 // -------------------------------------------
 // Only role with 'admin' can access the handlers
 // -------------------------------------------
 
 // get user by ID
-export const getUserByID = async (req, res, next) => {
+const getUserByID = async (req, res, next) => {
     const userID = req.params.id; //user ID
 
     // throws custom error if user not found
@@ -25,7 +24,7 @@ export const getUserByID = async (req, res, next) => {
 }
 
 //  get multiple users
-export const getUsers = async (req, res, next) => {
+const getUsers = async (req, res, next) => {
     
     const {filter, sort, limit, skip, select } = req.sanitizedQuery; //filter 
 
@@ -43,7 +42,7 @@ export const getUsers = async (req, res, next) => {
 }
 
 // update user by ID
-export const updateUserByID = async (req, res, next) => {
+const updateUserByID = async (req, res, next) => {
     const userID = req.params.id; // getting user id from params
 
     const updates = req.body 
@@ -79,7 +78,7 @@ export const updateUserByID = async (req, res, next) => {
 }
 
 // update multiple users
-export const updateUsers = async (req, res, next) => {
+const updateUsers = async (req, res, next) => {
     const {filter} = req.sanitizedQuery; // getting user id from params
 
     const updates = req.body; //changes for updation
@@ -104,7 +103,7 @@ export const updateUsers = async (req, res, next) => {
 }
 
 // delete a user by id
-export const deleteUserByID = async (req, res, next) => {
+const deleteUserByID = async (req, res, next) => {
     const userID = req.params.id; // getting user id from params
 
     let session;
@@ -153,7 +152,7 @@ export const deleteUserByID = async (req, res, next) => {
 }
 
 // delete multiple user by filter
-export const deleteUsers = async (req, res, next) => {
+const deleteUsers = async (req, res, next) => {
     const {filter, skip, limit} = req.sanitizedQuery; // getting user id from params
 
     let session;
@@ -211,3 +210,5 @@ export const deleteUsers = async (req, res, next) => {
             session.endSession() // end transaction session
     }
 }
+
+module.exports = { getUserByID, getUsers, updateUserByID, updateUsers, deleteUserByID, deleteUsers }

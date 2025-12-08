@@ -1,13 +1,13 @@
 // handlers for managing user's cart
 
-import CartModel from '../models/cart.js';
-import CustomError from '../error-handling/customError.js';
-import sendApiResponse from '../utils/apiResponse.js';
-import ProductModel from '../models/product.js';
-import { getCartSummary, populateCart, validateStock } from '../utils/helpers/cart.js';
+const CartModel = require('../models/cart.js');
+const CustomError = require('../error-handling/customError.js');
+const sendApiResponse = require('../utils/apiResponse.js');
+const ProductModel = require('../models/product.js');
+const { getCartSummary, populateCart, validateStock } = require('../utils/helpers/cart.js');
 
 // get user's cart
-export const getCart = async (req, res, next) => {
+const getCart = async (req, res, next) => {
     const user = req.user;
 
     // get current user's cart with products
@@ -39,7 +39,7 @@ export const getCart = async (req, res, next) => {
 }
 
 // add product to cart
-export const addToCart = async (req, res, next) => {
+const addToCart = async (req, res, next) => {
     const userID = req.user.id;
     const { productID, quantity=1 } = req.body;
 
@@ -93,7 +93,7 @@ export const addToCart = async (req, res, next) => {
 }
 
 // clear cart   
-export const clearCart = async (req, res, next) => {
+const clearCart = async (req, res, next) => {
     const userID = req.user.id;
 
     const cart = await CartModel.findOne({ user: userID });
@@ -115,7 +115,7 @@ export const clearCart = async (req, res, next) => {
 }
 
 // remove product from cart
-export const removeFromCart = async (req, res, next) => {
+const removeFromCart = async (req, res, next) => {
     const userID = req.user.id;
     const productID = req.params.id;
 
@@ -147,7 +147,7 @@ export const removeFromCart = async (req, res, next) => {
 
 //  /cart/:productId/:operation
 // operation = 'inc' or 'dec'
-export const updateCartItemQuantity = async (req, res, next) => {
+const updateCartItemQuantity = async (req, res, next) => {
     const { productID, operation } = req.params;
 
     if (!productID)
@@ -206,3 +206,5 @@ export const updateCartItemQuantity = async (req, res, next) => {
         message: finalCart.products.length === 0 ? 'Cart is empty' : undefined,
     });
 }
+
+module.exports = { getCart, addToCart, clearCart, removeFromCart, updateCartItemQuantity }

@@ -1,8 +1,8 @@
 // script to insert products into the database
 
-import ProductModel from "../models/product.js";
-import mongoose from "mongoose";
-import '../configs/loadEnv.js'
+const ProductModel = require("../models/product.js");
+const mongoose = require("mongoose");
+require('../configs/loadEnv.js')
 
 const insertProducts = async () => {
     try {

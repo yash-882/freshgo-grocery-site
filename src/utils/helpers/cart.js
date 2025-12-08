@@ -1,9 +1,9 @@
-import mongoose from "mongoose";
-import CustomError from "../../error-handling/customError.js";
-import CartModel from "../../models/cart.js";
+const mongoose = require("mongoose");
+const CustomError = require("../../error-handling/customError.js");
+const CartModel = require("../../models/cart.js");
 
 // throws an error if the product is out of stock or requested quantity exceeds available stock.
-export const validateStock = (product, requestedQuantity = 1, nearbyWarehouse) => {
+const validateStock = (product, requestedQuantity = 1, nearbyWarehouse) => {
 
   // find the product in the specified warehouse
   const warehouse = product.warehouses.find(
@@ -29,7 +29,7 @@ export const validateStock = (product, requestedQuantity = 1, nearbyWarehouse) =
 
 // get user cart with added products
 // run pipeline to get sorted products by quantity (in descending order)
-export const populateCart = async (user, nearbyWarehouse) => {
+const populateCart = async (user, nearbyWarehouse) => {
 
     const cart = await CartModel.findOne({user: user._id});
     if(!cart) return null;
@@ -106,7 +106,7 @@ export const populateCart = async (user, nearbyWarehouse) => {
 
 
 // get cart summary (charges, total, e.t.c) 
-export const getCartSummary = (products=[]) => {
+const getCartSummary = (products=[]) => {
     // cart is empty
   if (products.length === 0)
     return {
@@ -143,3 +143,5 @@ export const getCartSummary = (products=[]) => {
         grandTotal: Number((cartSummary.cartTotal + cartSummary.deliveryCharges).toFixed(2))
     }
 }
+
+module.exports = { validateStock, populateCart, getCartSummary };

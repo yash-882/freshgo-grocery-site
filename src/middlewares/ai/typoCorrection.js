@@ -1,9 +1,9 @@
-import productCategories from "../../constants/productCategories.js";
-import CustomError from "../../error-handling/customError.js";
-import generateAiResponse from "../../utils/aiChat.js";
+const productCategories = require("../../constants/productCategories.js");
+const CustomError = require("../../error-handling/customError.js");
+const generateAiResponse = require("../../utils/aiChat.js");
 
 // corrects typo in search queries using AI
-export const typoCorrection = async (req, res, next) => {
+const typoCorrection = async (req, res, next) => {
     const searchValue = req.sanitizedQuery?.value;
 
     if (!searchValue) {
@@ -36,3 +36,5 @@ Input: ${searchValue}`)
     req.sanitizedQuery.value = corrected;
     next();
 }
+
+module.exports = typoCorrection;

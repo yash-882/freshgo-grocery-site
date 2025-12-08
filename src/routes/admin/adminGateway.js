@@ -1,13 +1,12 @@
-import { Router } from 'express'
-import { 
+const { Router } = require('express')
+const { 
     authorizeUser, 
-    roleBasedAccess } from '../../middlewares/auths.js';
-import orderRouter from './order.js';
-import productRouter from './product.js';
-import userRouter from './user.js';
-import warehouseRouter from './warehouse.js';
+    roleBasedAccess } = require('../../middlewares/auths.js');
+const orderRouter = require('./order.js');
+const productRouter = require('./product.js');
+const userRouter = require('./user.js');
+const warehouseRouter = require('./warehouse.js');
 const adminRouter = Router();
-
 
 // apply authentication and admin check to all routes
 adminRouter.use(authorizeUser, roleBasedAccess('admin'));
@@ -18,4 +17,4 @@ adminRouter.use('/orders', orderRouter) //order
 adminRouter.use('/warehouses', warehouseRouter) //order
 
 
-export default adminRouter;
+module.exports = adminRouter;

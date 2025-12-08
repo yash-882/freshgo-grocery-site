@@ -1,13 +1,12 @@
 // Categories with their subcategories for the frontend to display
 // Other operations are done by the script (backend/scripts/productCategory.js)
 
-import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
-import CategoryModel from "../models/productCategory.js";
-import sendApiResponse from "../utils/apiResponse.js";
+const cacheKeyBuilders = require("../constants/cacheKeyBuilders.js");
+const CategoryModel = require("../models/productCategory.js");
+const sendApiResponse = require("../utils/apiResponse.js");
+const { storeCachedData } = require("../utils/helpers/cache.js");
 
-import { storeCachedData } from "../utils/helpers/cache.js";
-
-export const getCategories = async (req, res, next) => {
+const getCategories = async (req, res, next) => {
     const categories = await CategoryModel.find();
 
     if(categories.length > 0){
@@ -21,7 +20,7 @@ export const getCategories = async (req, res, next) => {
     })
 }
 
-export const getCategoryByName = async (req, res, next) => {
+const getCategoryByName = async (req, res, next) => {
     const categoryName = req.params.name;
     const category = await CategoryModel.findOne({ name: categoryName });
 
@@ -34,4 +33,6 @@ export const getCategoryByName = async (req, res, next) => {
         data: category,
     })
 }
+
+module.exports = { getCategories, getCategoryByName }
 

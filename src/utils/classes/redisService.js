@@ -1,4 +1,4 @@
-import client from '../../configs/redisClient.js'
+const client = require('../../configs/redisClient.js')
 
 // Redis operations
 class RedisService {
@@ -91,4 +91,4 @@ class RedisService {
     }
 }
 
-export default RedisService
+module.exports = RedisService

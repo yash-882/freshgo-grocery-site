@@ -1,7 +1,7 @@
-import ProductModel from "../../models/product.js"
+const ProductModel = require("../../models/product.js");
 
 // reusable util for retreiving products
-export const getProductsAgg = async ({
+const getProductsAgg = async ({
     filter = {},
     sort={},
     limit = 12,
@@ -73,3 +73,5 @@ export const getProductsAgg = async ({
     ])
 
 }
+
+module.exports = { getProductsAgg };

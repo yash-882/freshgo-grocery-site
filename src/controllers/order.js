@@ -1,21 +1,21 @@
 // authenticated-only
 
-import mongoose from "mongoose";
-import OrderModel from "../models/order.js";
-import CustomError from "../error-handling/customError.js";
-import sendApiResponse from "../utils/apiResponse.js";
-import CartModel from "../models/cart.js";
-import { getCartSummary, populateCart, validateStock } from '../utils/helpers/cart.js';
-import { startOrderProcessing } from "../queues/order.js";
-import { addEmailToQueue } from "../queues/email.js";
-import { updateProductsOnCancellation, updateProductsOnDelivery } from "../utils/helpers/product.js";
-import razorpay from "../configs/razorpay.js";
-import crypto from "crypto";
-import { getRemainingDeliveryTime, reserveStock } from "../utils/helpers/order.js";
+const mongoose = require("mongoose");
+const OrderModel = require("../models/order.js");
+const CustomError = require("../error-handling/customError.js");
+const sendApiResponse = require("../utils/apiResponse.js");
+const CartModel = require("../models/cart.js");
+const { getCartSummary, populateCart, validateStock } = require('../utils/helpers/cart.js');
+const { startOrderProcessing } = require("../queues/order.js");
+const { addEmailToQueue } = require("../queues/email.js");
+const { updateProductsOnCancellation, updateProductsOnDelivery } = require("../utils/helpers/product.js");
+const razorpay = require("../configs/razorpay.js");
+const crypto = require("crypto");
+const { getRemainingDeliveryTime, reserveStock } = require("../utils/helpers/order.js");
 
 
 // create new order (currently supports only cash_on_delivery)
-export const createOrder = async (req, res, next) => {
+const createOrder = async (req, res, next) => {
     const { addressID, paymentMethod } = req.body;
     const user = req.user;
 
@@ -146,7 +146,7 @@ export const createOrder = async (req, res, next) => {
 }
 
 // Razorpay makes a POST request on this handler/route for the payment result
-export const razorpayVerify = async (req, res, next) => {
+const razorpayVerify = async (req, res, next) => {
     const payload = req.body
     const razorpaySignature = req.headers["x-razorpay-signature"];
 
@@ -242,7 +242,7 @@ export const razorpayVerify = async (req, res, next) => {
 }
 
 // get orders
-export const getOrders = async (req, res, next) => {
+const getOrders = async (req, res, next) => {
     const user = req.user;
     const {filter, sort, limit, skip, select} = req.sanitizedQuery;
     
@@ -277,7 +277,7 @@ export const getOrders = async (req, res, next) => {
 }
 
 // get order by ID
-export const getOrderByID = async (req, res, next) => {
+const getOrderByID = async (req, res, next) => {
     const orderID = req.params.id;
     const user = req.user;
 
@@ -305,7 +305,7 @@ export const getOrderByID = async (req, res, next) => {
 }
 
 // cancel order (single order)
-export const cancelOrder = async (req, res, next) => {
+const cancelOrder = async (req, res, next) => {
     const orderID = req.params.id;
     const user = req.user;
 
@@ -369,7 +369,7 @@ export const cancelOrder = async (req, res, next) => {
 }
 
 // handles acceptance or rejection of delivery when the order status is 'reached_destination'
-export const confirmDelivery = async (req, res, next) => {
+const confirmDelivery = async (req, res, next) => {
     const user = req.user;
     const { isAccepted, id: orderID } = req.params;
 
@@ -440,3 +440,5 @@ export const confirmDelivery = async (req, res, next) => {
         await session.endSession();
     }
 }
+
+module.exports = { createOrder, razorpayVerify, getOrders, getOrderByID, cancelOrder, confirmDelivery }

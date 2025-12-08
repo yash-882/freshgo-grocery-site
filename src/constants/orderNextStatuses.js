@@ -24,4 +24,4 @@ const nextStatusMap = {
     }
 }
 
-export default nextStatusMap
+module.exports = nextStatusMap

@@ -1,5 +1,5 @@
-import { model, Schema } from "mongoose";
-import productCategories from "../constants/productCategories.js";
+const { model, Schema } = require("mongoose");
+const productCategories = require("../constants/productCategories.js");
 
 
 const CategorySchema = new Schema({
@@ -40,4 +40,4 @@ CategorySchema.pre('save', function(next) {
 
 const CategoryModel = model('category', CategorySchema);
 
-export default CategoryModel;
+module.exports = CategoryModel;

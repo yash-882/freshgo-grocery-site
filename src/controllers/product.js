@@ -1,14 +1,14 @@
 // Public controllers 
 
-import CustomError from '../error-handling/customError.js';
-import sendApiResponse from '../utils/apiResponse.js';
-import { storeCachedData } from '../utils/helpers/cache.js';
-import mongoose from 'mongoose';
-import OrderModel from '../models/order.js'
-import { getProductsAgg } from '../utils/queries/product.js';
+const CustomError = require('../error-handling/customError.js');
+const sendApiResponse = require('../utils/apiResponse.js');
+const { storeCachedData } = require('../utils/helpers/cache.js');
+const mongoose = require('mongoose');
+const OrderModel = require('../models/order.js')
+const { getProductsAgg } = require('../utils/queries/product.js');
 
 // search products 
-export const searchProducts = async (req, res, next) => {
+const searchProducts = async (req, res, next) => {
   const { value, filter, skip, limit, sort, select } = req.sanitizedQuery || {};
 
   // search value is required
@@ -39,7 +39,7 @@ export const searchProducts = async (req, res, next) => {
 }
 
 // get multiple products (public route)
-export const getProducts = async (req, res, next) => {
+const getProducts = async (req, res, next) => {
 
   const { filter, sort, limit, skip, select } = req.sanitizedQuery || {};
 
@@ -67,7 +67,7 @@ export const getProducts = async (req, res, next) => {
 }
 
 // get single product by ID (public route)
-export const getProductByID = async (req, res, next) => {
+const getProductByID = async (req, res, next) => {
   const productID = req.params.id;
 
   const product = await getProductsAgg({
@@ -90,7 +90,7 @@ export const getProductByID = async (req, res, next) => {
 }
 
 // products top 20 recommendations based on order history 
-export const productsRecommendations = async (req, res, next) => {
+const productsRecommendations = async (req, res, next) => {
 
   const { sort, select } = req.sanitizedQuery
 
@@ -182,3 +182,5 @@ export const productsRecommendations = async (req, res, next) => {
     data: recommededProds,
   })
 }
+
+module.exports = { searchProducts, getProducts, getProductByID, productsRecommendations }

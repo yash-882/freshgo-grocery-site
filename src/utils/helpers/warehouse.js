@@ -1,12 +1,12 @@
-import WarehouseModel from "../../models/warehouse.js";
+const WarehouseModel = require("../../models/warehouse.js");
 
-export const getManagedWarehouseByUser = async (user) => {
+const getManagedWarehouseByUser = async (user) => {
     // Find warehouses managed by this user(warehouse_manager)
       const managedWarehouses = await WarehouseModel.findOne({ manager: user._id }).select('_id');
       return managedWarehouses
 }
 
-export const getNearbyWarehouse = async ({longitude, latitude}) => {
+const getNearbyWarehouse = async ({longitude, latitude}) => {
       // get the warehouse nearest to user
     return await WarehouseModel.findOne({
         location: {
@@ -19,6 +19,8 @@ export const getNearbyWarehouse = async ({longitude, latitude}) => {
 }
 
 // Get default warehouse when the client's location is not accessible
-export const getDefaultWarehouse = async () => 
+const getDefaultWarehouse = async () => 
      await WarehouseModel.findById(process.env.DEFAULT_WAREHOUSE_ID);
+
+module.exports = { getManagedWarehouseByUser, getNearbyWarehouse, getDefaultWarehouse };
 

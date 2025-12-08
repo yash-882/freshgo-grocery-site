@@ -1,6 +1,7 @@
-import mongoose, { Schema, model } from 'mongoose';
-import productCategories from '../constants/productCategories.js';
-import CustomError from '../error-handling/customError.js';
+const mongoose = require('mongoose');
+const { Schema, model } = mongoose;
+const productCategories = require('../constants/productCategories.js');
+const CustomError = require('../error-handling/customError.js');
 
 // Part of product schema field
 const warehouse = new Schema({
@@ -168,4 +169,4 @@ next();
 
 const ProductModel = model('product', ProductSchema);
 
-export default ProductModel;
+module.exports = ProductModel;

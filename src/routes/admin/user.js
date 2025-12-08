@@ -1,15 +1,15 @@
 // user routes (Admin-only)
 
-import { Router } from 'express'
-import { handleQuery } from '../../middlewares/query.js';
-import { schemaRegistery } from '../../constants/schemaRegistery.js';
-import { 
+const { Router } = require('express')
+const { handleQuery } = require('../../middlewares/query.js');
+const { schemaRegistery } = require('../../constants/schemaRegistery.js');
+const { 
     deleteUserByID, 
     deleteUsers, 
     getUserByID, 
     getUsers, 
     updateUserByID, 
-    updateUsers } from '../../controllers/admin/user.js';
+    updateUsers } = require('../../controllers/admin/user.js');
 
 const userRouter = Router();
 
@@ -25,4 +25,4 @@ userRouter.route('/:id')
     .patch(updateUserByID)
     .delete(deleteUserByID)
 
-export default userRouter;
+module.exports = userRouter;

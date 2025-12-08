@@ -1,12 +1,12 @@
 // operations for product management
 
-import mongoose from "mongoose";
-import ProductModel from "../../models/product.js";
-import CustomError from "../../error-handling/customError.js";
-import cloudinary from "../../configs/cloudinary.js";
+const mongoose = require("mongoose");
+const ProductModel = require("../../models/product.js");
+const CustomError = require("../../error-handling/customError.js");
+const cloudinary = require("../../configs/cloudinary.js");
 
 // updates products after successful delivery
-export const updateProductsOnDelivery = async products => {
+const updateProductsOnDelivery = async products => {
     await ProductModel.updateMany(
         // product IDs
         { _id: { $in: products.map(p => p.product) } },
@@ -21,7 +21,7 @@ export const updateProductsOnDelivery = async products => {
 };
 
 // updates cancelled products
-export const updateProductsOnCancellation = async (products, nearbyWarehouse) => {
+const updateProductsOnCancellation = async (products, nearbyWarehouse) => {
     const operations = products.map(item => ({
         updateOne: {
             filter: { 
@@ -46,9 +46,8 @@ export const updateProductsOnCancellation = async (products, nearbyWarehouse) =>
     await ProductModel.bulkWrite(operations);
 }
 
-
 // creates data for single or multiple products
-export const getProductBodyForDB = (productData, images=[]) => {
+const getProductBodyForDB = (productData, images=[]) => {
     let productDataDB;
 
     // for multiple products
@@ -98,9 +97,8 @@ return productDataDB;
 
 }
 
-
 // limits admin from creating products more than the specified limit
-export const limitProductCreation = (productData, images) => {
+const limitProductCreation = (productData, images) => {
   const BULK_CREATION_LIMIT = Number(process.env.BULK_CREATION_LIMIT_PER_REQUEST);
 
   if (Array.isArray(productData) && productData.length > BULK_CREATION_LIMIT) {
@@ -113,7 +111,7 @@ export const limitProductCreation = (productData, images) => {
 };
  
 // limits admin from creating products more than the specified limit (AI)
-export const limitProductCreationAi = (productData) => {
+const limitProductCreationAi = (productData) => {
   const BULK_CREATION_LIMIT_AI = Number(process.env.BULK_CREATION_LIMIT_AI);
 
   if (Array.isArray(productData) && productData.length > BULK_CREATION_LIMIT_AI) {
@@ -125,7 +123,7 @@ export const limitProductCreationAi = (productData) => {
   }
 };
 
-export const limitImageUploads = (productData, images) => {
+const limitImageUploads = (productData, images) => {
   const MAX_IMAGES_PER_PRODUCT = Number(process.env.MAX_IMAGES_PER_PRODUCT);
 
   if(Array.isArray(productData)){
@@ -150,7 +148,7 @@ export const limitImageUploads = (productData, images) => {
 }
 
 // check missing fields that are required and dependen on admin's input
-export const checkProductMissingFields = (productData, exceptions=[]) => {
+const checkProductMissingFields = (productData, exceptions=[]) => {
 
   const exceptionsSet = new Set(exceptions)
 
@@ -185,7 +183,7 @@ else{
 }
 
 // uploads a file buffer to cloudinary and returns the result
-export const streamUpload = (fileBuffer, fileName) => {
+const streamUpload = (fileBuffer, fileName) => {
 
   return new Promise((res, rej) => {
 
@@ -216,4 +214,15 @@ export const streamUpload = (fileBuffer, fileName) => {
     // finalize the upload
     stream.end(fileBuffer);
   });
+};
+
+module.exports = {
+  updateProductsOnDelivery,
+  updateProductsOnCancellation,
+  getProductBodyForDB,
+  limitProductCreation,
+  limitProductCreationAi,
+  limitImageUploads,
+  checkProductMissingFields,
+  streamUpload
 };

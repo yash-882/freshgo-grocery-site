@@ -1,18 +1,18 @@
 // product router
-import { Router } from 'express';
-import {
+const { Router } = require('express');
+const {
     getProductByID,
     getProducts,
     productsRecommendations,
     searchProducts,
-} from '../controllers/product.js';
-import { schemaRegistery } from '../constants/schemaRegistery.js';
-import { handleQuery } from '../middlewares/query.js';
-import { checkCachedData } from '../middlewares/cache.js';
+} = require('../controllers/product.js');
+const { schemaRegistery } = require('../constants/schemaRegistery.js');
+const { handleQuery } = require('../middlewares/query.js');
+const checkCachedData = require('../middlewares/cache.js');
 const productRouter = Router();
-import { findNearbyWarehouse } from '../middlewares/findNearbyWarehouse.js';
-import { typoCorrection } from '../middlewares/ai/typoCorrection.js';
-import {authorizeUser} from '../middlewares/auths.js'
+const findNearbyWarehouse = require('../middlewares/findNearbyWarehouse.js');
+const typoCorrection = require('../middlewares/ai/typoCorrection.js');
+const { authorizeUser } = require('../middlewares/auths.js')
 
 productRouter.use(findNearbyWarehouse);
 
@@ -40,4 +40,4 @@ productRouter.get('/recommendations',
 productRouter.get('/:id', checkCachedData('product', false), getProductByID)
 
 
-export default productRouter;
+module.exports = productRouter;

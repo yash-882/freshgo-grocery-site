@@ -1,10 +1,10 @@
-import { getCachedData } from "../utils/helpers/cache.js";
-import sendApiResponse from "../utils/apiResponse.js";
-import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
+const { getCachedData } = require("../utils/helpers/cache.js");
+const sendApiResponse = require("../utils/apiResponse.js");
+const cacheKeyBuilders = require("../constants/cacheKeyBuilders.js");
 
 // middleware to get cached products (stored in Redis)
 // resourceType can be a product/cart/user/order, etc
-export const checkCachedData = (resourceType,  isPvtResource=false) => {
+const checkCachedData = (resourceType,  isPvtResource=false) => {
   return async (req, res, next) => {
     // query or document ID is used for a uniqueID as a part of Redis key
     let queryOrID;
@@ -36,3 +36,5 @@ export const checkCachedData = (resourceType,  isPvtResource=false) => {
     console.log('Sent via cache.');
 }
 }
+
+module.exports = checkCachedData;

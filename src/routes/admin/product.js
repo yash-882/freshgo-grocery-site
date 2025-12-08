@@ -1,17 +1,17 @@
 // product routes (Admin-only)
 
-import { Router } from 'express'
-import { handleQuery } from '../../middlewares/query.js';
-import { schemaRegistery } from '../../constants/schemaRegistery.js';
-import {
+const { Router } = require('express')
+const { handleQuery } = require('../../middlewares/query.js');
+const { schemaRegistery } = require('../../constants/schemaRegistery.js');
+const {
     createProductsWithImages,
     adminDeleteProductByID,
     adminDeleteProducts,
     adminUpdateProductByID,
     adminUpdateProducts,
     createProducts
-} from '../../controllers/admin/product.js';
-import uploader from '../../configs/multer.js';
+} = require('../../controllers/admin/product.js');
+const uploader = require('../../configs/multer.js');
 
 
 const productRouter = Router();
@@ -42,4 +42,4 @@ productRouter.post('/with-images',
 
     productRouter.post('/', createProducts) //create product without images
 
-export default productRouter;
+module.exports = productRouter;

@@ -1,4 +1,4 @@
-import mailer from 'nodemailer';
+const mailer = require('nodemailer');
 
 // create a transporter object using SMTP transport
 const transporter = mailer.createTransport({
@@ -23,4 +23,4 @@ async function sendEmail(to, subject, text) {
     });
 }
 
-export default sendEmail;
+module.exports = sendEmail;

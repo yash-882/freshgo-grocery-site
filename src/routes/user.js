@@ -1,16 +1,16 @@
-import { Router } from 'express';
+const { Router } = require('express');
 const userRouter = Router();
-import { 
+const { 
     addAddress, 
     deleteAddressByID, 
     getMyProfile, 
     updateAddressByID, 
-    updateMyProfile } from '../controllers/user.js';
-import { authorizeUser, roleBasedAccess } from '../middlewares/auths.js';
-import { 
+    updateMyProfile } = require('../controllers/user.js');
+const { authorizeUser, roleBasedAccess } = require('../middlewares/auths.js');
+const { 
     revenueComparison, 
     revenueStats, 
-    topFiveSellingProducts } from '../controllers/manager/dashboard.js';
+    topFiveSellingProducts } = require('../controllers/manager/dashboard.js');
 
 // any authenticated user with any role(admin, user, warehouse_manager) can access these routes
 
@@ -45,4 +45,4 @@ userRouter.get('/my-warehouse/dashboard/top-five-selling-products', topFiveSelli
 userRouter.get('/my-warehouse/dashboard/revenue-comparison/:comparison', revenueComparison)
 
 
-export default userRouter;
+module.exports = userRouter;

@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import {
+const { Router } = require('express');
+const {
     assignManagerToWarehouse,
     createWarehouse,
     deleteWarehouseByID,
@@ -7,9 +7,9 @@ import {
     getWarehouses,
     removeManagerFromWarehouse,
     updateWarehouseByID
-} from '../../controllers/admin/warehouse.js';
-import { handleQuery } from '../../middlewares/query.js';
-import { schemaRegistery } from '../../constants/schemaRegistery.js';
+} = require('../../controllers/admin/warehouse.js');
+const { handleQuery } = require('../../middlewares/query.js');
+const { schemaRegistery } = require('../../constants/schemaRegistery.js');
 
 const warehouseRouter = Router();
 
@@ -31,4 +31,4 @@ warehouseRouter.route('/:id')
     .delete(deleteWarehouseByID); // Delete warehouse by ID
 
 
-export default warehouseRouter;
+module.exports = warehouseRouter;

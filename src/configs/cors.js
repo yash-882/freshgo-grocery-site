@@ -1,5 +1,5 @@
 // allow requests from the specified client origin and include credentials (like cookies) 
-import cors from 'cors'
+const cors = require('cors')
 
 const setCors = () => {
     return cors({
@@ -8,4 +8,4 @@ const setCors = () => {
     })
 }
 
-export default setCors;
+module.exports = setCors;

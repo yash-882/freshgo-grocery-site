@@ -1,8 +1,8 @@
-import QueryOperations from "../utils/classes/queryOperations.js"
+const QueryOperations = require("../utils/classes/queryOperations.js")
 
 
 // used to sanitize and create a valid filter{} for MongoDB
-export const handleQuery = (schemaFields) => {
+const handleQuery = (schemaFields) => {
 
     return (req, res, next) => {
         const queryParamsLength = Object.keys(req.query).length
@@ -34,3 +34,5 @@ export const handleQuery = (schemaFields) => {
         next()
     }
 }
+
+module.exports = { handleQuery }

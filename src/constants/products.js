@@ -114,4 +114,4 @@ in vitamin C and perfect for breakfast or a quick energy boost.`,
   }
 ];
 
-export default products;
+module.exports = products;

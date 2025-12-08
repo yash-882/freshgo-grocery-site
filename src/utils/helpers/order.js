@@ -1,8 +1,8 @@
-import nextStatusMap from "../../constants/orderNextStatuses.js";
-import CustomError from "../../error-handling/customError.js";
-import ProductModel from "../../models/product.js";
+const nextStatusMap = require("../../constants/orderNextStatuses.js");
+const CustomError = require("../../error-handling/customError.js");
+const ProductModel = require("../../models/product.js");
 
-export const reserveStock = async (products, user, warehouse, session) => {
+const reserveStock = async (products, user, warehouse, session) => {
     // update product stock
     const productsUpdates = products.map(item => ({
         updateOne: {
@@ -39,7 +39,7 @@ export const reserveStock = async (products, user, warehouse, session) => {
 }
 
 // returns remaining delivery time in milliseconds
-export const getRemainingDeliveryTime = (orderStatus='placed') => {
+const getRemainingDeliveryTime = (orderStatus='placed') => {
    let deliveryRemainingTime = 0;
         let statuses = Object.keys(nextStatusMap);
         
@@ -57,3 +57,5 @@ export const getRemainingDeliveryTime = (orderStatus='placed') => {
 
         return deliveryRemainingTime
 }
+
+module.exports = { reserveStock, getRemainingDeliveryTime };

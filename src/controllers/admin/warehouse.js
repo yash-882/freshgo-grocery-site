@@ -1,12 +1,12 @@
-import WarehouseModel from "../../models/warehouse.js";
-import CustomError from "../../error-handling/customError.js";
-import sendApiResponse from "../../utils/apiResponse.js";
-import UserModel from "../../models/user.js";
-import mongoose from "mongoose";
-import ProductModel from "../../models/product.js";
+const WarehouseModel = require("../../models/warehouse.js");
+const CustomError = require("../../error-handling/customError.js");
+const sendApiResponse = require("../../utils/apiResponse.js");
+const UserModel = require("../../models/user.js");
+const mongoose = require("mongoose");
+const ProductModel = require("../../models/product.js");
 
 // Create a new warehouse (admin only)
-export const createWarehouse = async (req, res, next) => {
+const createWarehouse = async (req, res, next) => {
     const warehouseData = req.body;
     const newWarehouse = await WarehouseModel.create(warehouseData);
 
@@ -18,7 +18,7 @@ export const createWarehouse = async (req, res, next) => {
 
 
 // Get all warehouses (admin only)
-export const getWarehouses = async (req, res, next) => {
+const getWarehouses = async (req, res, next) => {
     const { filter, sort, limit, skip, select } = req.sanitizedQuery;
 
     const warehouses = await WarehouseModel.find(filter)
@@ -37,7 +37,7 @@ export const getWarehouses = async (req, res, next) => {
 }
 
 // Get warehouse by ID (admin only)
-export const getWarehouseByID = async (req, res, next) => {
+const getWarehouseByID = async (req, res, next) => {
     const warehouseID = req.params.id;
 
     const warehouse = await WarehouseModel.findById(warehouseID)
@@ -56,7 +56,7 @@ export const getWarehouseByID = async (req, res, next) => {
 }
 
 // Update warehouse by ID(admin only)
-export const updateWarehouseByID = async (req, res, next) => {
+const updateWarehouseByID = async (req, res, next) => {
     const warehouseID = req.params.id;
     const updates = req.body || {};
 
@@ -96,7 +96,7 @@ export const updateWarehouseByID = async (req, res, next) => {
 }
 
 // Assign manager to a warehouse (admin only)
-export const assignManagerToWarehouse = async (req, res, next) => {
+const assignManagerToWarehouse = async (req, res, next) => {
     const warehouseID = req.params.id;
     const { managerID } = req.body;
 
@@ -139,7 +139,7 @@ export const assignManagerToWarehouse = async (req, res, next) => {
 }
 
 // Remove manager from a warehouse (admin only)
-export const removeManagerFromWarehouse = async (req, res, next) => {
+const removeManagerFromWarehouse = async (req, res, next) => {
     const warehouseID = req.params.id;
     const { managerID } = req.body; // Manager ID to remove
 
@@ -167,7 +167,7 @@ export const removeManagerFromWarehouse = async (req, res, next) => {
 }
 
 // Delete warehouse by ID (admin only)
-export const deleteWarehouseByID = async (req, res, next) => {
+const deleteWarehouseByID = async (req, res, next) => {
     const warehouseID = req.params.id;
 
     let session;
@@ -202,3 +202,5 @@ export const deleteWarehouseByID = async (req, res, next) => {
         }
     }
 }
+
+module.exports = { createWarehouse, getWarehouses, getWarehouseByID, updateWarehouseByID, assignManagerToWarehouse, removeManagerFromWarehouse, deleteWarehouseByID }

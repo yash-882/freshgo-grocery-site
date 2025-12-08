@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
-import CustomError from "../error-handling/customError.js";
-import mongoose from "mongoose";
-import { getDefaultWarehouse, getNearbyWarehouse } from "../utils/helpers/warehouse.js";
-import { clearCookie, setCookie } from "../utils/helpers/cookies.js";
+const jwt = require("jsonwebtoken");
+const CustomError = require("../error-handling/customError.js");
+const mongoose = require("mongoose");
+const { getDefaultWarehouse, getNearbyWarehouse } = require("../utils/helpers/warehouse.js");
+const { clearCookie, setCookie } = require("../utils/helpers/cookies.js");
 
 // - Client sends their the coordinates[longitude, latitude] through cookies
 // if coordinates aren't present or invalid, server assigns a default warehouse from DB
@@ -19,7 +19,7 @@ import { clearCookie, setCookie } from "../utils/helpers/cookies.js";
 
 
 // Finds nearby warehouse to the clinet and sets cookies for caching the details
-export const findNearbyWarehouse = async (req, res, next) => {
+const findNearbyWarehouse = async (req, res, next) => {
     const coords = req.cookies?.coordinates?.split(',');
     const [longitude, latitude] = coords || [];
     const long = Number(longitude);
@@ -89,3 +89,5 @@ export const findNearbyWarehouse = async (req, res, next) => {
     req.nearbyWarehouse = warehouse;
     next();
 };
+
+module.exports = findNearbyWarehouse;

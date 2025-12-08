@@ -13,4 +13,4 @@ const sendApiResponse = (res, statusCode=200, {
     })
 }
 
-export default sendApiResponse;
+module.exports = sendApiResponse;

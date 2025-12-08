@@ -1,6 +1,5 @@
-
 // generates schema fields for different use cases (numeric, all, selectable)
-export const schemaFieldHelpers = {
+const schemaFieldHelpers = {
 
     // extracts numeric fields of Mongoose schema
   getNumericFields(schemaPaths, customAllowedFields=[]) {
@@ -23,3 +22,5 @@ export const schemaFieldHelpers = {
     return new Set([...allFields, ...customAllowedFields]) //all fields except '__v'
   },
 };
+
+module.exports = schemaFieldHelpers;

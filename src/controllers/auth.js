@@ -1,27 +1,27 @@
-import bcrypt from 'bcrypt';
-import UserModel from "../models/user.js";
-import CustomError from "../error-handling/customError.js";
-import { signAccessToken, signRefreshToken } from "../utils/helpers/jwt.js";
-import { 
+const bcrypt = require('bcrypt');
+const UserModel = require("../models/user.js");
+const CustomError = require("../error-handling/customError.js");
+const { signAccessToken, signRefreshToken } = require("../utils/helpers/jwt.js");
+const { 
     findUserByQuery, 
     bcryptCompare, 
     generateOTP, 
     verifyOTP, 
-    trackOTPLimit } from "../utils/helpers/auth.js";
-import client from "../configs/redisClient.js";
-import sendEmail from "../utils/mailjet.js";
-import RedisService from "../utils/classes/redisService.js";
-import mongoose from "mongoose";
-import sendApiResponse from "../utils/apiResponse.js";
-import CartModel from "../models/cart.js";
-import passport from "passport";
-import { deleteCachedData } from "../utils/helpers/cache.js";
-import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
-import jwt from "jsonwebtoken";
-import { promisify } from "util";
+    trackOTPLimit } = require("../utils/helpers/auth.js");
+const client = require("../configs/redisClient.js");
+const sendEmail = require("../utils/mailjet.js");
+const RedisService = require("../utils/classes/redisService.js");
+const mongoose = require("mongoose");
+const sendApiResponse = require("../utils/apiResponse.js");
+const CartModel = require("../models/cart.js");
+const passport = require("passport");
+const { deleteCachedData } = require("../utils/helpers/cache.js");
+const cacheKeyBuilders = require("../constants/cacheKeyBuilders.js");
+const jwt = require("jsonwebtoken");
+const { promisify } = require("util");
 
 // signup user after OTP validation
-export const signUp = async (req, res, next) => {
+const signUp = async (req, res, next) => {
     const {email, OTP: enteredOTP} = req.body
 
     // a unique key is generated with the combination of 'purpose' and 'email' for Redis)
@@ -106,7 +106,7 @@ export const signUp = async (req, res, next) => {
 }
 
 // sign-up controller
-export const validateForSignUp = async (req, res, next) => {
+const validateForSignUp = async (req, res, next) => {
     const body = req.body;
 
     // if password is not confirmed correctly
@@ -173,7 +173,7 @@ export const validateForSignUp = async (req, res, next) => {
 }
 
 // login controller
-export const login = async (req, res, next) => {
+const login = async (req, res, next) => {
     const {email, password} = req.body;
 
    // check if user exists in DB with the given email
@@ -235,7 +235,7 @@ export const login = async (req, res, next) => {
 
 }
 
-export const logout = async (req, res, next) => {
+const logout = async (req, res, next) => {
 
     // clear all tokens
     res.clearCookie('AT', { httpOnly: true, sameSite: 'strict'})
@@ -247,7 +247,7 @@ export const logout = async (req, res, next) => {
     })
 }
 
-export const changePassword = async (req, res, next) => {
+const changePassword = async (req, res, next) => {
     const {currentPassword, newPassword, confirmNewPassword} = req.body;
 
     const user = req.user; // get user from request object
@@ -301,7 +301,7 @@ export const changePassword = async (req, res, next) => {
 }
 
 // request OTP to change the password
-export const resetPassword = async (req, res, next) => {
+const resetPassword = async (req, res, next) => {
 
     // get email from body
     const {email} = req.body || {}
@@ -346,7 +346,7 @@ sendApiResponse(res, 201, {
 }
 
 // verifies the OTP and change password
-export const verifyPasswordResetOTP = async (req, res, next) => {
+const verifyPasswordResetOTP = async (req, res, next) => {
 
     const {OTP: enteredOTP, email} = req.body;
 
@@ -405,7 +405,7 @@ export const verifyPasswordResetOTP = async (req, res, next) => {
 }
 
 // resets password using a valid password reset token
-export const submitNewPassword = async (req, res, next) => {
+const submitNewPassword = async (req, res, next) => {
 
     const {email, newPassword, confirmNewPassword} = req.body 
 
@@ -475,7 +475,7 @@ export const submitNewPassword = async (req, res, next) => {
     })
 }
 
-export const requestEmailChange = async (req, res, next) => {
+const requestEmailChange = async (req, res, next) => {
     const user = req.user; //ensure user is authenticated
     const { newEmail } = req.body;
 
@@ -522,7 +522,7 @@ export const requestEmailChange = async (req, res, next) => {
 
 
 // verifies the OTP and change password
-export const changeEmailWithOTP = async (req, res, next) => {
+const changeEmailWithOTP = async (req, res, next) => {
 
     const user = req.user; //ensure user is authenticated
 
@@ -572,7 +572,7 @@ export const changeEmailWithOTP = async (req, res, next) => {
 }
 
 // delete my account (current user)
-export const deleteMyAccount = async (req, res, next) => {
+const deleteMyAccount = async (req, res, next) => {
 
     // not verified via password checker middleware
     if(!req.verified){
@@ -632,7 +632,7 @@ export const deleteMyAccount = async (req, res, next) => {
 
 // google OAUTH2 callback (the user is redirected to this callback
 // after clicking 'Allow access', then passport handles the auth flow)
-export const googleAuthCallback = (req, res, next) => {
+const googleAuthCallback = (req, res, next) => {
      passport.authenticate('google', { session: false }, (err, user, info) => {
 
         // (db error, passport error, unauthorized error)
@@ -687,3 +687,5 @@ export const googleAuthCallback = (req, res, next) => {
 
      })(req, res, next)
 }
+
+module.exports = { signUp, validateForSignUp, login, logout, changePassword, resetPassword, verifyPasswordResetOTP, submitNewPassword, requestEmailChange, changeEmailWithOTP, deleteMyAccount, googleAuthCallback }

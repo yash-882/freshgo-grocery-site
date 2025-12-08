@@ -1,9 +1,9 @@
 // script to insert categories into the database
 
-import CategoryModel from "../models/productCategory.js";
-import mongoose from "mongoose";
-import '../configs/loadEnv.js'
-import productCategories from "../constants/productCategories.js";
+const CategoryModel = require("../models/productCategory.js");
+const mongoose = require("mongoose");
+require('../configs/loadEnv.js')
+const productCategories = require("../constants/productCategories.js");
 
 
 const insertCategories = async () => {

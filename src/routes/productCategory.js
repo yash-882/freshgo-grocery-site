@@ -1,8 +1,8 @@
 // Categories with their subcategories for the frontend to display
 
-import { Router } from 'express';
-import { getCategories, getCategoryByName } from '../controllers/productCategory.js';
-import { checkCachedData } from '../middlewares/cache.js';
+const { Router } = require('express');
+const { getCategories, getCategoryByName } = require('../controllers/productCategory.js');
+const checkCachedData = require('../middlewares/cache.js');
 
 const categoryRouter = Router();
 
@@ -12,4 +12,4 @@ categoryRouter.route('/')
 categoryRouter.route('/:name')
     .get(checkCachedData('category'), getCategoryByName) //get category by name
 
-export default categoryRouter;
+module.exports = categoryRouter;

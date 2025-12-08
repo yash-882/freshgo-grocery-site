@@ -1,17 +1,17 @@
 // initializes the order and updates its status in the background using BullMQ
 
-import IOredisClient from "../configs/ioredisClient.js";
-import { Queue, Worker } from 'bullmq';
-import OrderModel from "../models/order.js";
-import { orderCancellationQueue } from "./autoCancelOrder.js";
-import nextStatusMap from "../constants/orderNextStatuses.js";
-import { getRemainingDeliveryTime } from "../utils/helpers/order.js";
+const IOredisClient = require("../configs/ioredisClient.js");
+const { Queue, Worker } = require('bullmq');
+const OrderModel = require("../models/order.js");
+const { orderCancellationQueue } = require("./autoCancelOrder.js");
+const nextStatusMap = require("../constants/orderNextStatuses.js");
+const { getRemainingDeliveryTime } = require("../utils/helpers/order.js");
 
 // create queue
-export const orderQueue = new Queue('orders', { connection: IOredisClient })
+const orderQueue = new Queue('orders', { connection: IOredisClient })
 
 // initialize order fulfilment
-export const startOrderProcessing = async (data) => { 
+const startOrderProcessing = async (data) => { 
     try {
         // update order status to 'processing' after 5 seconds
         await orderQueue.add('updateStatus', {
@@ -108,3 +108,5 @@ const updateOrderStatus = async (job) => {
 
 //  listens for jobs and executes them
 new Worker('orders', updateOrderStatus, { connection: IOredisClient })
+
+module.exports = { orderQueue, startOrderProcessing }

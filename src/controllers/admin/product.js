@@ -1,24 +1,24 @@
 //admin only operations
 
-import CustomError from '../../error-handling/customError.js';
-import ProductModel from '../../models/product.js';
-import sendApiResponse from '../../utils/apiResponse.js';
-import { deleteCachedData, storeCachedData } from '../../utils/helpers/cache.js';
-import cacheKeyBuilders from '../../constants/cacheKeyBuilders.js';
-import cloudinary from '../../configs/cloudinary.js';
-import { 
+const CustomError = require('../../error-handling/customError.js');
+const ProductModel = require('../../models/product.js');
+const sendApiResponse = require('../../utils/apiResponse.js');
+const { deleteCachedData, storeCachedData } = require('../../utils/helpers/cache.js');
+const cacheKeyBuilders = require('../../constants/cacheKeyBuilders.js');
+const cloudinary = require('../../configs/cloudinary.js');
+const { 
     checkProductMissingFields,
     getProductBodyForDB, 
     limitImageUploads, 
     limitProductCreation, 
     limitProductCreationAi, 
     streamUpload
-} from '../../utils/helpers/product.js';
-import { generateProductFieldsAi } from '../../utils/ai/generateProductFieldsAi.js.js';
+} = require('../../utils/helpers/product.js');
+const generateProductFieldsAi = require('../../utils/ai/generateProductFieldsAi.js');
 
 
 // create products with images
-export const createProductsWithImages = async (req, res, next) => {
+const createProductsWithImages = async (req, res, next) => {
     // Multer keeps JSON stringified
     const productData = JSON.parse(req.body.productData || '{}');
 
@@ -143,7 +143,7 @@ export const createProductsWithImages = async (req, res, next) => {
 
 
 // create products without images
-export const createProducts = async (req, res, next) => {
+const createProducts = async (req, res, next) => {
     const products = Array.isArray(req.body) ? req.body :  [req.body];
 
     if(products.length === 0)
@@ -197,7 +197,7 @@ export const createProducts = async (req, res, next) => {
 }
 
 // update multiple products
-export const adminUpdateProducts = async (req, res, next) => {
+const adminUpdateProducts = async (req, res, next) => {
     if (Object.keys(req.body).length === 0) {
         return next(new CustomError('BadRequestError', 'Body is empty for updation!', 400));
     }
@@ -227,7 +227,7 @@ export const adminUpdateProducts = async (req, res, next) => {
 
 
 // delete multiple products (accessible roles: Admin only)
-export const adminDeleteProducts = async (req, res, next) => {
+const adminDeleteProducts = async (req, res, next) => {
     const { filter } = req.sanitizedQuery;
 
     // Delete all matching products
@@ -247,7 +247,7 @@ export const adminDeleteProducts = async (req, res, next) => {
 }
 
 // update product by ID
-export const adminUpdateProductByID = async (req, res, next) => {
+const adminUpdateProductByID = async (req, res, next) => {
     if (Object.keys(req.body || {}).length === 0) {
         return next(new CustomError('BadRequestError', 'Body is empty for updation!', 400));
     }
@@ -276,7 +276,7 @@ export const adminUpdateProductByID = async (req, res, next) => {
 }
 
 // delete product by ID 
-export const adminDeleteProductByID = async (req, res, next) => {
+const adminDeleteProductByID = async (req, res, next) => {
     const productID = req.params.id;
 
     const deletedProduct = await ProductModel.findByIdAndDelete(productID);
@@ -294,3 +294,5 @@ export const adminDeleteProductByID = async (req, res, next) => {
     })
 
 }
+
+module.exports = { createProductsWithImages, createProducts, adminUpdateProducts, adminDeleteProducts, adminUpdateProductByID, adminDeleteProductByID }

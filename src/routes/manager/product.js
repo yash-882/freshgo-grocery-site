@@ -1,14 +1,14 @@
-import { Router } from 'express';
-import { authorizeUser, roleBasedAccess } from '../../middlewares/auths.js';
-import { schemaRegistery } from '../../constants/schemaRegistery.js';
-import {
+const { Router } = require('express');
+const { authorizeUser, roleBasedAccess } = require('../../middlewares/auths.js');
+const { schemaRegistery } = require('../../constants/schemaRegistery.js');
+const {
     addProductsToMyWarehouse,
     deleteProductsFromMyWarehouse,
     getMyWarehouseProducts,
-} from '../../controllers/manager/product.js';
-import { handleQuery } from '../../middlewares/query.js';
-import { checkManagedWarehouse } from '../../middlewares/checkManagedWarehouse.js';
-import { checkCachedData } from '../../middlewares/cache.js';
+} = require('../../controllers/manager/product.js');
+const { handleQuery } = require('../../middlewares/query.js');
+const checkCachedData = require('../../middlewares/cache.js');
+const checkManagedWarehouse = require('../../middlewares/checkManagedWarehouse.js');
 
 const productRouterManager = Router();
 
@@ -28,4 +28,4 @@ productRouterManager.route('/')
     .delete(deleteProductsFromMyWarehouse); // Delete products from specific warehouses
 
 
-    export default productRouterManager
+module.exports = productRouterManager;

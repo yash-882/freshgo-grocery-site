@@ -1,6 +1,6 @@
-import { Schema, model } from 'mongoose';
-import bcrypt from 'bcrypt';
-import CustomError from '../error-handling/customError.js';
+const { Schema, model } = require('mongoose');
+const bcrypt = require('bcrypt');
+const CustomError = require('../error-handling/customError.js');
 
 // address schema (only used as a field of UserSchema)
 const AddressSchema = new Schema({
@@ -150,4 +150,4 @@ UserSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'],
 // model for the User schema
 const UserModel = model('user', UserSchema);
 
-export default UserModel;
+module.exports = UserModel;

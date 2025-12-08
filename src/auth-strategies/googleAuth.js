@@ -1,10 +1,10 @@
-import {Strategy as GoogleStrategy} from 'passport-google-oauth2';
-import {randomInt} from 'crypto';
-import UserModel from '../models/user.js';
-import { hash } from 'bcrypt';
+const {Strategy: GoogleStrategy} = require('passport-google-oauth2');
+const { randomInt } = require('crypto');
+const UserModel = require('../models/user.js');
+const { hash } = require('bcrypt');
 
 // google OAUTH2 strategy
-export default new GoogleStrategy({
+module.exports = new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: `https://freshgo.onrender.com/api/auth/google/callback`,

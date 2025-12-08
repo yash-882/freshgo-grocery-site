@@ -1,5 +1,5 @@
 // sort object keys alphabetically
-export const sortObjectKeys = (filter) => {
+const sortObjectKeys = (filter) => {
   return Object.keys(filter || {})
     .sort()
     .reduce((sortedFilter, key) => {
@@ -11,5 +11,7 @@ export const sortObjectKeys = (filter) => {
 }
 
 // checks if the given value is a plain object (not an array or null)
-export const isPlainObject = (obj) => 
+const isPlainObject = (obj) => 
     typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+
+module.exports = { sortObjectKeys, isPlainObject };

@@ -1,15 +1,15 @@
-import { Router } from 'express'
-import { 
+const { Router } = require('express')
+const { 
     cancelOrder, 
     confirmDelivery, 
     createOrder, 
     getOrderByID, 
     getOrders, 
-    razorpayVerify, } from '../controllers/order.js';
-import { authorizeUser } from '../middlewares/auths.js';
-import { handleQuery } from '../middlewares/query.js';
-import { schemaRegistery } from '../constants/schemaRegistery.js';
-import { findNearbyWarehouse } from '../middlewares/findNearbyWarehouse.js';
+    razorpayVerify, } = require('../controllers/order.js');
+const { authorizeUser } = require('../middlewares/auths.js');
+const { handleQuery } = require('../middlewares/query.js');
+const { schemaRegistery } = require('../constants/schemaRegistery.js');
+const findNearbyWarehouse = require('../middlewares/findNearbyWarehouse.js');
 
 const orderRouter = Router()
 
@@ -28,4 +28,4 @@ orderRouter.post('/confirm-delivery/:id/:isAccepted', confirmDelivery) //accept 
 orderRouter.get('/:id', getOrderByID) //get order by ID
 
 
-export default orderRouter;
+module.exports = orderRouter;

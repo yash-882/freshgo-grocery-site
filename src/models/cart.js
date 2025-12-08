@@ -1,4 +1,4 @@
-import {Schema, model} from 'mongoose';
+const { Schema, model } = require('mongoose');
 
 const CartSchema = new Schema({
     // multiple products
@@ -76,4 +76,4 @@ CartSchema.methods.getSummary = function(products=[]){
 
 const CartModel = model('cart', CartSchema)
 
-export default CartModel;
+module.exports = CartModel;

@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+const { Schema, model } = require('mongoose');
 
 // Each product in the Products collection has a 'warehouses' field to track its availability in the listed warehouses
 const WarehouseSchema = new Schema({
@@ -54,4 +54,4 @@ WarehouseSchema.index({location: '2dsphere'})
 
 const WarehouseModel = model('warehouse', WarehouseSchema);
 
-export default WarehouseModel;
+module.exports = WarehouseModel;

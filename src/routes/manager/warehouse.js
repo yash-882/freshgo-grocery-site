@@ -1,8 +1,8 @@
 // warehouse_manager routes
 
-import { Router } from 'express';
-import { authorizeUser, roleBasedAccess } from '../../middlewares/auths.js';
-import { getMyWarehouse } from '../../controllers/manager/warehouse.js';
+const { Router } = require('express');
+const { authorizeUser, roleBasedAccess } = require('../../middlewares/auths.js');
+const { getMyWarehouse } = require('../../controllers/manager/warehouse.js');
 
 const warehouseRouter = Router();
 
@@ -12,4 +12,4 @@ warehouseRouter.use(authorizeUser, roleBasedAccess('warehouse_manager'));
 // Get warehouses managed by the current user
 warehouseRouter.get('/', getMyWarehouse);
 
-export default warehouseRouter;
+module.exports = warehouseRouter;

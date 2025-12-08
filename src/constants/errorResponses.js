@@ -65,4 +65,4 @@ const prodErrorHandlers = {
     BSONError: err => 'Invalid ID provided in body or params'
 }
 
-export default prodErrorHandlers;
+module.exports = prodErrorHandlers;

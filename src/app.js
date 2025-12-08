@@ -1,32 +1,32 @@
-import express from 'express';
+const express = require('express');
 const app = express();
 
 // import routers
-import authRouter from './routes/auth.js';
-import productRouter from './routes/product.js';
-import cartRouter from './routes/cart.js';
-import userRouter from './routes/user.js';
-import orderRouter from './routes/order.js';
-import adminRouter from './routes/admin/adminGateway.js';
-import categoryRouter from './routes/productCategory.js';
-import productRouterManager from './routes/manager/product.js';
-import warehouseRouter from './routes/manager/warehouse.js';
+const authRouter = require('./routes/auth.js');
+const productRouter = require('./routes/product.js');
+const cartRouter = require('./routes/cart.js');
+const userRouter = require('./routes/user.js');
+const orderRouter = require('./routes/order.js');
+const adminRouter = require('./routes/admin/adminGateway.js');
+const categoryRouter = require('./routes/productCategory.js');
+const productRouterManager = require('./routes/manager/product.js');
+const warehouseRouter = require('./routes/manager/warehouse.js');
 
 // auth strategies
-import googleAuth from './auth-strategies/googleAuth.js';
+const googleAuth = require('./auth-strategies/googleAuth.js');
 
 // custom module
-import GlobalErrorHandler from './middlewares/error.js';
-import CustomError from './error-handling/customError.js';
+const GlobalErrorHandler = require('./middlewares/error.js');
+const CustomError = require('./error-handling/customError.js');
 
 // npm packages
-import passport from 'passport';
-import cookieParser from 'cookie-parser';
-import qs from 'qs';
+const passport = require('passport');
+const cookieParser = require('cookie-parser');
+const qs = require('qs');
 
-// congfigs
-import setCors from './configs/cors.js';
-import { apiRoot, getApiRoutes } from './controllers/apiEntry.js';
+// configs
+const setCors = require('./configs/cors.js');
+const { apiRoot, getApiRoutes } = require('./controllers/apiEntry.js');
 
 // allow requests from the specified client origin and include credentials (like cookies) 
 app.use(setCors())
@@ -37,7 +37,7 @@ app.set("query parser", query => qs.parse(query))
 // parse JSON data
 app.use(express.json())
 
-import rateLimit from 'express-rate-limit';
+const rateLimit = require('express-rate-limit');
 
 // rate limiter
 app.use(rateLimit({
@@ -102,4 +102,4 @@ app.use((req, res, next) =>
 // Global error handler
 app.use(GlobalErrorHandler);
 
-export default app;
+module.exports = app;

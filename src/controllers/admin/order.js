@@ -1,11 +1,10 @@
-import CustomError from "../../error-handling/customError.js";
-import OrderModel from "../../models/order.js";
-import ProductModel from "../../models/product.js";
-import sendApiResponse from "../../utils/apiResponse.js";
+const CustomError = require("../../error-handling/customError.js");
+const OrderModel = require("../../models/order.js");
+const sendApiResponse = require("../../utils/apiResponse.js");
 
 // Admin controls over orders
 
-export const getOrders = async (req, res, next) => {
+const getOrders = async (req, res, next) => {
     const { filter, sort, limit, skip, select } = req.sanitizedQuery;
 
     const orders = await OrderModel.find(filter)
@@ -31,7 +30,7 @@ export const getOrders = async (req, res, next) => {
 }
 
 // get order by ID
-export const getOrderByID = async (req, res, next) => {
+const getOrderByID = async (req, res, next) => {
     const orderID = req.params.id;
 
     if (!orderID) {
@@ -60,7 +59,7 @@ export const getOrderByID = async (req, res, next) => {
 }
 
 // delete order
-export const deleteOrderByID = async (req, res, next) => {
+const deleteOrderByID = async (req, res, next) => {
     const orderID = req.params.id;
 
     if (!orderID) {
@@ -81,7 +80,7 @@ export const deleteOrderByID = async (req, res, next) => {
 }
 
 // delete multiple orders
-export const deleteOrders = async (req, res, next) => {
+const deleteOrders = async (req, res, next) => {
     const { filter, skip, limit } = req.sanitizedQuery;
 
     // filter is mandatory
@@ -110,7 +109,7 @@ export const deleteOrders = async (req, res, next) => {
 }
 
 // update order
-export const updateOrderByID = async (req, res, next) => {
+const updateOrderByID = async (req, res, next) => {
     const orderID = req.params.id;
     const updates = req.body;
 
@@ -139,7 +138,7 @@ export const updateOrderByID = async (req, res, next) => {
 }
 
 // update multiple order 
-export const updateOrders = async (req, res, next) => {
+const updateOrders = async (req, res, next) => {
     const { filter, skip, limit } = req.sanitizedQuery;
     const updates = req.body;
 
@@ -187,7 +186,7 @@ export const updateOrders = async (req, res, next) => {
 
 
 // get order stats
-export const getOrderStats = async (req, res, next) => {
+const getOrderStats = async (req, res, next) => {
 
     const { time } = req.query || {}
 
@@ -276,3 +275,5 @@ export const getOrderStats = async (req, res, next) => {
       }
 }})
 }
+
+module.exports = { getOrders, getOrderByID, deleteOrderByID, deleteOrders, updateOrderByID, updateOrders, getOrderStats }

@@ -1,4 +1,4 @@
-import prodErrorHandlers from "../constants/errorResponses.js";
+const prodErrorHandlers = require("../constants/errorResponses.js");
 
 // OPERATIONAL_ERRORS helps identifying operational errors, 
 // also including libraries errors(Mongoose, JWT, etc.)
@@ -82,4 +82,4 @@ const GlobalErrorHandler = (err, req, res, next) => {
     }
 }
 
-export default GlobalErrorHandler
+module.exports = GlobalErrorHandler

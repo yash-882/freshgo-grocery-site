@@ -1,11 +1,11 @@
-import ProductModel from "../models/product.js"
-import OrderModel from "../models/order.js";
-import UserModel from "../models/user.js";
-import { schemaFieldHelpers } from "../utils/helpers/schemaField.js";
-import WarehouseModel from "../models/warehouse.js";
+const ProductModel = require("../models/product.js")
+const OrderModel = require("../models/order.js");
+const UserModel = require("../models/user.js");
+const schemaFieldHelpers = require("../utils/helpers/schemaField.js");
+const WarehouseModel = require("../models/warehouse.js");
 
 // Stores schema definitions with categorized fields
-export const  schemaRegistery = {
+const schemaRegistery = {
     // 'product' schema fields
   product: {
     // numeric fields
@@ -42,5 +42,7 @@ export const  schemaRegistery = {
     
   }
 };
+
+module.exports = { schemaRegistery }
 
 

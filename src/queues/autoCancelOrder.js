@@ -1,11 +1,11 @@
-import IOredisClient from "../configs/ioredisClient.js";
-import { Queue, Worker } from 'bullmq';
-import OrderModel from "../models/order.js";
-import { updateProductsOnCancellation } from "../utils/helpers/product.js";
-import sendEmail from "../utils/mailjet.js";
+const IOredisClient = require("../configs/ioredisClient.js");
+const { Queue, Worker } = require('bullmq');
+const OrderModel = require("../models/order.js");
+const { updateProductsOnCancellation } = require("../utils/helpers/product.js");
+const sendEmail = require("../utils/mailjet.js");
 
 // create queue
-export const orderCancellationQueue = new Queue('auto-cancel-orders', { 
+const orderCancellationQueue = new Queue('auto-cancel-orders', { 
     connection: IOredisClient 
 })
 
@@ -41,3 +41,5 @@ const autoCancelOrder = async (job={}) => {
 
 //  listens for jobs and executes them
 new Worker('auto-cancel-orders', autoCancelOrder, { connection: IOredisClient })
+
+module.exports = { orderCancellationQueue }

@@ -1,13 +1,12 @@
-
-import OrderModel from "../../models/order.js";
-import sendApiResponse from "../../utils/apiResponse.js";
-import CustomError from "../../error-handling/customError.js";
+const OrderModel = require("../../models/order.js");
+const sendApiResponse = require("../../utils/apiResponse.js");
+const CustomError = require("../../error-handling/customError.js");
 
 
 // Warehouse dashboard for warehouse_manager-----------------------------
 
 // revenue stats
-export const revenueStats = async (req, res, next) => {
+exports.revenueStats = async (req, res, next) => {
   const { time } = req.query;
 
   if (time && !(['year_to_date', 'last_30_days'].includes(time))) {
@@ -116,7 +115,7 @@ export const revenueStats = async (req, res, next) => {
 
 
 // top 5 selling products from current warehouse
-export const topFiveSellingProducts = async (req, res, next) => {
+exports.topFiveSellingProducts = async (req, res, next) => {
   const managedWarehouse = await getManagedWarehouseByUser(req.user);
   if (!managedWarehouse) {
     return next(new CustomError('ForbiddenError', 'You are not assigned to any warehouse yet.', 403));
@@ -204,7 +203,7 @@ export const topFiveSellingProducts = async (req, res, next) => {
 
 
 // this month vs last month / this year vs last year
-export const revenueComparison = async (req, res, next) => {
+exports.revenueComparison = async (req, res, next) => {
     const { comparison } = req.params;
     const managedWarehouse = req.managedWarehouse;
 

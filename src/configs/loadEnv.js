@@ -1,5 +1,5 @@
-import dotenv from 'dotenv';
-import path from 'path';
+const dotenv = require('dotenv');
+const path = require('path');
 
 function loadEnv() {
   // Load environment variables from the .env file  
@@ -10,4 +10,4 @@ function loadEnv() {
 
 }
 loadEnv()
-export default loadEnv
+module.exports = loadEnv

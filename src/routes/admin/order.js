@@ -1,16 +1,16 @@
 // order routes (Admin-only)
 
-import { Router } from 'express'
-import { handleQuery } from '../../middlewares/query.js';
-import { schemaRegistery } from '../../constants/schemaRegistery.js';
-import { 
+const { Router } = require('express')
+const { handleQuery } = require('../../middlewares/query.js');
+const { schemaRegistery } = require('../../constants/schemaRegistery.js');
+const { 
     deleteOrderByID, 
     deleteOrders, 
     getOrderByID, 
     getOrders, 
     getOrderStats, 
     updateOrderByID, 
-    updateOrders } from '../../controllers/admin/order.js';
+    updateOrders } = require('../../controllers/admin/order.js');
 
 const orderRouter = Router();
 
@@ -28,4 +28,4 @@ orderRouter.route('/:id')
   .patch(updateOrderByID) // update order by ID
   .delete(deleteOrderByID); // delete order by ID
 
-export default orderRouter;
+module.exports = orderRouter;

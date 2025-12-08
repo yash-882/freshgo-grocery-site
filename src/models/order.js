@@ -1,4 +1,4 @@
-import {Schema, model} from 'mongoose'
+const { Schema, model } = require('mongoose')
 
 // order now -> cart cleared -> show payment methods -> ...
 // -> make payment using one method -> processing payment
@@ -172,4 +172,4 @@ OrderSchema.virtual('readableDeliveryTime').get(function() {
 
 const OrderModel = model('order', OrderSchema)
 
-export default OrderModel
+module.exports = OrderModel

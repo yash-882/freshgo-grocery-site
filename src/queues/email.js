@@ -1,16 +1,16 @@
 // Add emails to queue and sends it after a specfied delay 
 
-import { Queue, Worker } from 'bullmq';
-import IOredisClient from '../configs/ioredisClient.js';
-import sendEmail from '../utils/mailjet.js';
+const { Queue, Worker } = require('bullmq');
+const IOredisClient = require('../configs/ioredisClient.js');
+const sendEmail = require('../utils/mailjet.js');
 
 // create a queue for emails
-export const emailQueue = new Queue('emails', {
+const emailQueue = new Queue('emails', {
     connection: IOredisClient,
 });
 
 // adds an email to the queue
-export const addEmailToQueue = async (to, subject, text) => {
+const addEmailToQueue = async (to, subject, text) => {
     try {
         await emailQueue.add('sendEmail', { to, subject, text }, {
             removeOnComplete: true, // remove job from queue when completed
@@ -41,3 +41,5 @@ new Worker('emails', async (job) => {
 
 
 }, { connection: IOredisClient });
+
+module.exports = { emailQueue, addEmailToQueue }

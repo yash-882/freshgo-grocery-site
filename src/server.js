@@ -5,12 +5,11 @@ process.on('uncaughtException', err => {
   process.exit(1);
 });
 
-import './configs/loadEnv.js' //load environment variables
-import mongoose from 'mongoose'
-import redisClient from './configs/redisClient.js'
-import app from './app.js'
-import ioredisClient from './configs/ioredisClient.js'
-
+require('./configs/loadEnv.js') //load environment variables
+const mongoose = require('mongoose')
+const redisClient = require('./configs/redisClient.js')
+const app = require('./app.js')
+const ioredisClient = require('./configs/ioredisClient.js')
 
 // listens for Redis client errors (used for storage)
 redisClient.on('error', (err) => console.error('Redis Client Error', err))

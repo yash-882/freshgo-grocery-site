@@ -1,9 +1,9 @@
-import {Router} from 'express'
+const { Router } = require('express')
 
 const cartRouter = Router()
-import { addToCart, clearCart, getCart, updateCartItemQuantity } from '../controllers/cart.js';
-import { authorizeUser } from '../middlewares/auths.js';
-import { findNearbyWarehouse } from '../middlewares/findNearbyWarehouse.js';
+const { addToCart, clearCart, getCart, updateCartItemQuantity } = require('../controllers/cart.js');
+const { authorizeUser } = require('../middlewares/auths.js');
+const findNearbyWarehouse = require('../middlewares/findNearbyWarehouse.js');
 
 // all cart routes require user authorization
 cartRouter.use(authorizeUser);
@@ -20,6 +20,5 @@ cartRouter.post('/add', addToCart) //add product to cart
 //increment++ or decrement-- item's quantity
 cartRouter.patch('/update/:productID/:operation', updateCartItemQuantity)
 
-export default cartRouter;
+module.exports = cartRouter;
 
-  

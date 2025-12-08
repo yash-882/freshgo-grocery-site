@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 class QueryOperations {
 
@@ -222,4 +222,4 @@ createSelectFields() {
 }
 }
 
-export default QueryOperations;
+module.exports = QueryOperations;

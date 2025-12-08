@@ -1,5 +1,5 @@
 // Cloud storage for files (like image, video, etc.)
-import {v2 as cloudinary} from 'cloudinary'
+const { v2: cloudinary } = require('cloudinary')
 
 // connect to cloudinary
 cloudinary.config({
@@ -8,4 +8,4 @@ cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME
  })
 
- export default cloudinary;
+ module.exports = cloudinary;

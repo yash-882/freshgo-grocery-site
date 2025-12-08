@@ -1,10 +1,10 @@
 // This user-controller provides handlers for authenticated users
 
-import UserModel from "../models/user.js";
-import CustomError from "../error-handling/customError.js";
-import sendApiResponse from "../utils/apiResponse.js";
-import { deleteCachedData } from "../utils/helpers/cache.js";
-import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
+const UserModel = require("../models/user.js");
+const CustomError = require("../error-handling/customError.js");
+const sendApiResponse = require("../utils/apiResponse.js");
+const { deleteCachedData } = require("../utils/helpers/cache.js");
+const cacheKeyBuilders = require("../constants/cacheKeyBuilders.js");
 
 // ------------------------------------------------------------------------------------
 // handlers for the current user (Deletion and creation is present in /auth)
@@ -12,7 +12,7 @@ import cacheKeyBuilders from "../constants/cacheKeyBuilders.js";
 // ------------------------------------------------------------------------------------
 
 // normal user: update own profile 
-export const updateMyProfile = async (req, res, next) => {
+const updateMyProfile = async (req, res, next) => {
     const userID = req.user._id; //current user
     const updates = req.body;
 
@@ -40,7 +40,7 @@ export const updateMyProfile = async (req, res, next) => {
 }
             
 // normal user: get own profile 
-export const getMyProfile = async (req, res, next) => {
+const getMyProfile = async (req, res, next) => {
 
     // user is not authenticated (extra check for avoiding wrong serving of data)
   if (!req.user) {
@@ -58,7 +58,7 @@ export const getMyProfile = async (req, res, next) => {
 // CRUD for user's address
 
 // update address
-export const updateAddressByID = async (req, res, next) => {
+const updateAddressByID = async (req, res, next) => {
     const user = req.user; //current user
     const addressID = req.params.id; //address ID
     const updates = req.body; //updates
@@ -98,7 +98,7 @@ export const updateAddressByID = async (req, res, next) => {
 }
 
 // add address 
-export const addAddress = async (req, res, next) => {
+const addAddress = async (req, res, next) => {
     const user = req.user; //current user
     const newAddress = req.body; //new address to add
 
@@ -125,7 +125,7 @@ export const addAddress = async (req, res, next) => {
 }
 
 // delete address
-export const deleteAddressByID = async (req, res, next) => {
+const deleteAddressByID = async (req, res, next) => {
     const user = req.user; //current user
     const addressID = req.params.id; //address ID
 
@@ -163,3 +163,5 @@ export const deleteAddressByID = async (req, res, next) => {
         message: 'Address deleted successfully',
     });
 }
+
+module.exports = { updateMyProfile, getMyProfile, updateAddressByID, addAddress, deleteAddressByID }

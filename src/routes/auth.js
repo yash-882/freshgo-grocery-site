@@ -1,7 +1,7 @@
-import { Router } from 'express';
+const { Router } = require('express');
 const authRouter = Router();
 
-import { 
+const { 
     login, 
     logout, 
     changePassword,
@@ -13,15 +13,15 @@ import {
     changeEmailWithOTP,
     requestEmailChange,
     deleteMyAccount,
-    googleAuthCallback, } from '../controllers/auth.js';
-import {authRequiredFields} from '../constants/authRequiredFields.js';
+    googleAuthCallback, } = require('../controllers/auth.js');
+const {authRequiredFields} = require('../constants/authRequiredFields.js');
 
 // middlewares
-import { 
+const { 
     authorizeUser, 
     checkRequiredFields, 
-    verifyPassword } from '../middlewares/auths.js';
-    import passport from 'passport';
+    verifyPassword } = require('../middlewares/auths.js');
+const passport = require('passport');
     
 // entry point of google authentication 
 authRouter.route('/google')
@@ -86,4 +86,4 @@ deleteMyAccount)
 authRouter.route('/logout')
 .post(logout)
 
-export default authRouter
+module.exports = authRouter

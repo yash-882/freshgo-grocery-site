@@ -2,17 +2,17 @@
 // USER AUTHENTICATION AND AUTHORIZATION
 // IF THE ACCESS TOKEN IS EXPIRED, A NEW ONE CAN BE RE-ISSUED BY VALIDATING REFRESH TOKEN
 
-import jwt from 'jsonwebtoken'
+const jwt = require('jsonwebtoken')
 
 // sign access tokens
-export function signAccessToken(payload) {
+function signAccessToken(payload) {
     return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN
     })
 }
 
 // sign refresh tokens
-export function signRefreshToken(payload) {
+function signRefreshToken(payload) {
     return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN
     })
@@ -20,7 +20,7 @@ export function signRefreshToken(payload) {
 
 
 // verify access token
-export function verifyAccessToken(accessToken) {
+function verifyAccessToken(accessToken) {
     // for catching token expiration error and provide a new access token
     // after successful verification of refresh token
     try {
@@ -51,11 +51,13 @@ export function verifyAccessToken(accessToken) {
 }
 }
 
-export function verifyRefreshToken(token) {
+function verifyRefreshToken(token) {
     // validate refresh token
     const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)
 
     // validation successful, return decoded token
     return decoded
 }
+
+module.exports = { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken };
 

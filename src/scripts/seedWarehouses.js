@@ -1,7 +1,7 @@
 // script to insert warehouses into the database
-import "../configs/loadEnv.js";
-import WarehouseModel from "../models/warehouse.js";
-import mongoose from "mongoose";
+require("../configs/loadEnv.js");
+const WarehouseModel = require("../models/warehouse.js");
+const mongoose = require("mongoose");
 
 const insertWarehouses = async () => {
     try {

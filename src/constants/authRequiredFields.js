@@ -1,6 +1,6 @@
 // fields required in specific routes of /auth
 // each key represents a route handler that contains required field(s) as a value
-export const authRequiredFields = {
+const authRequiredFields = {
     signUp: [
         'email', 
         'OTP'
@@ -51,3 +51,5 @@ export const authRequiredFields = {
         'password'
     ]
 }
+
+module.exports = { authRequiredFields }

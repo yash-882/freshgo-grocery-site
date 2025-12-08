@@ -1,12 +1,12 @@
-import client from "../../configs/redisClient.js";
-import CustomError from "../../error-handling/customError.js";
-import UserModel from "../../models/user.js";
-import bcrypt from 'bcrypt';
-import crypto from 'crypto';
+const client = require("../../configs/redisClient.js");
+const CustomError = require("../../error-handling/customError.js");
+const UserModel = require("../../models/user.js");
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
 
 // Function to get user by query or throw an error if not found
-export const findUserByQuery = async (query, 
+const findUserByQuery = async (query, 
     throwErr=true, 
     notFoundResponse = 'User not found') => {
 
@@ -20,7 +20,7 @@ export const findUserByQuery = async (query,
 }
 
 // compares plain texts with hashed strings, throws a custom error if not equal
-export const bcryptCompare = async ({plain, hashed}, errMessage = 'Incorrect!') => {
+const bcryptCompare = async ({plain, hashed}, errMessage = 'Incorrect!') => {
 
     // compare plain string with hashed string
     const isCorrect = await bcrypt.compare(plain + "", hashed);
@@ -33,7 +33,7 @@ export const bcryptCompare = async ({plain, hashed}, errMessage = 'Incorrect!') 
 }
 
 // generate OTP
-export const generateOTP = (digits = 4) => {
+const generateOTP = (digits = 4) => {
 
     // Maximum possible value for given digits 
     //e.g. 6 → 999999 + 1 = 1000000(exclusive)
@@ -47,7 +47,7 @@ export const generateOTP = (digits = 4) => {
     return OTP.padStart(digits, "0")
 }
 // verifies OTP (OTP stored in Redis)
-export const verifyOTP = async (OTP_KEY, enteredOTP) => {
+const verifyOTP = async (OTP_KEY, enteredOTP) => {
 
     // user (json object)
     const jsonUser = await client.get(OTP_KEY)
@@ -71,7 +71,7 @@ export const verifyOTP = async (OTP_KEY, enteredOTP) => {
 }
 
 // validates OTP requests, attempts and update update the
-export const trackOTPLimit = async ({ OTP_KEY, countType='reqCount', limit=5, errMessage }) => {
+const trackOTPLimit = async ({ OTP_KEY, countType='reqCount', limit=5, errMessage }) => {
     
     const jsonData = await client.get(OTP_KEY)
     
@@ -107,3 +107,5 @@ export const trackOTPLimit = async ({ OTP_KEY, countType='reqCount', limit=5, er
     //return OTPData and ttl(remaining expiration time)
     return {user: OTPData, ttl}
 }
+
+module.exports = { findUserByQuery, bcryptCompare, generateOTP, verifyOTP, trackOTPLimit }

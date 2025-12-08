@@ -1,4 +1,4 @@
-import IOredis from 'ioredis'
+const IOredis = require('ioredis')
 
 // redis client for BullMQ connection
 const IOredisClient = new IOredis({
@@ -14,4 +14,4 @@ const IOredisClient = new IOredis({
     maxRetriesPerRequest: null,
 })
 
-export default IOredisClient
+module.exports = IOredisClient

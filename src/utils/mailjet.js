@@ -1,4 +1,4 @@
-import mailjet from '../configs/mailjet.js';
+const mailjet = require('../configs/mailjet.js');
 
 const sendEmail = async (to, subject, text) => {
     // implement email sending logic here using Mailjet or any other service
@@ -21,4 +21,4 @@ const sendEmail = async (to, subject, text) => {
     });
 }
 
-export default sendEmail;
+module.exports = sendEmail;

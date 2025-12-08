@@ -1,4 +1,4 @@
-import openai from "../configs/openaiClient.js"
+const openai = require("../configs/openaiClient.js");
 
 const generateAiResponse = async (prompt) => {
     const response = await openai.chat.completions.create({
@@ -16,4 +16,4 @@ const generateAiResponse = async (prompt) => {
     return response.choices[0].message?.content?.trim();
 }
 
-export default generateAiResponse;
+module.exports = generateAiResponse;

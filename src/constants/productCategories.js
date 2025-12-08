@@ -1,7 +1,7 @@
 // product categories for keeping 
 // consistency for models across the application
 
-export default [
+module.exports = [
     {
         name: 'fruits',
         subcategories: ['apple', 'banana', 'orange', 'grape', 'strawberry', 'mango', 'pineapple'],

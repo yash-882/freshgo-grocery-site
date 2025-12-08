@@ -1,4 +1,4 @@
-import {createClient} from 'redis' //database-like service to store data in key-value pairs
+const {createClient} = require('redis') //database-like service to store data in key-value pairs
 
 // client to connect to Redis
 const client = createClient({
@@ -10,4 +10,4 @@ const client = createClient({
     }
 });
 
-export default client
+module.exports = client
