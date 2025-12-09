@@ -5,14 +5,18 @@ const {
     getProducts,
     productsRecommendations,
     searchProducts,
+    searchProductsByImage,
 } = require('../controllers/product.js');
-const { schemaRegistery } = require('../constants/schemaRegistery.js');
 const { handleQuery } = require('../middlewares/query.js');
 const checkCachedData = require('../middlewares/cache.js');
-const productRouter = Router();
-const findNearbyWarehouse = require('../middlewares/findNearbyWarehouse.js');
-const typoCorrection = require('../middlewares/ai/typoCorrection.js');
 const { authorizeUser } = require('../middlewares/auths.js')
+const typoCorrection = require('../middlewares/ai/typoCorrection.js');
+const { schemaRegistery } = require('../constants/schemaRegistery.js');
+const findNearbyWarehouse = require('../middlewares/findNearbyWarehouse.js');
+const uploader = require('../configs/multer.js');
+const validateImageInput = require('../middlewares/validateImageInput.js');
+
+const productRouter = Router();
 
 productRouter.use(findNearbyWarehouse);
 
@@ -28,6 +32,18 @@ productRouter.get('/',
     handleQuery(schemaRegistery.product),
     checkCachedData('product', false),
     getProducts)
+
+// get products by image: public route
+productRouter.post('/image-search',
+    uploader({
+        fileSize: 1024 * 1024 * 2, // 2MB
+        allowedFileFormats: ['jpeg', 'jpg', 'png', 'webp', 'bmp', 'tiff'],
+        fileType: 'image'
+    }).single('image'),
+    
+    validateImageInput, // validates req.file (if parsed) or URL
+    searchProductsByImage
+)
 
 // products top 20 recommendations based on order history 
 productRouter.get('/recommendations', 

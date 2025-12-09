@@ -131,7 +131,8 @@ ProductSchema.index({ category: 1, price: 1 });
 ProductSchema.index({
     name: "text",
     tags: "text",
-    category: "text"
+    category: "text",
+    subcategory: "text"
 })
 
 ProductSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], 

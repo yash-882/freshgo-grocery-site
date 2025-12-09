@@ -7,7 +7,7 @@ const getProductsAgg = async ({
     limit = 12,
     skip = 0,
     select={}
-}, nearbyWarehouse) => {
+}, nearbyWarehouse, sortByHighlyPurchased = true) => {
 
     let quantity;
 
@@ -55,7 +55,15 @@ const getProductsAgg = async ({
         },
 
         // default sort by most purchased and high-to-low quantity
-        { $sort: { ...sort, score: -1,  quantity: sort.quantity || -1 } },
+        { 
+            $sort: { 
+            ...sort, 
+
+            // sort by popularity if TRUE
+           ...( sortByHighlyPurchased ? { score: -1 }  : {} ),  
+            quantity: sort.quantity || -1 
+        } 
+    },
 
         { $skip: skip || 0 },
         { $limit: limit || 12 },

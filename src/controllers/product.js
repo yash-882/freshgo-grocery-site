@@ -6,6 +6,7 @@ const { storeCachedData } = require('../utils/helpers/cache.js');
 const mongoose = require('mongoose');
 const OrderModel = require('../models/order.js')
 const { getProductsAgg } = require('../utils/queries/product.js');
+const identifyProductAi = require('../utils/ai/identifyProductAi.js');
 
 // search products 
 const searchProducts = async (req, res, next) => {
@@ -18,7 +19,7 @@ const searchProducts = async (req, res, next) => {
 
   // search products based on the query
   const searchedProducts = await getProductsAgg({
-    filter: {...filter, $text: { $search: value }},
+    filter: {...filter, $text: { $search: value, $caseSensitive: false }},
     sort: sort,
     select: select,
     skip: skip,
@@ -183,4 +184,43 @@ const productsRecommendations = async (req, res, next) => {
   })
 }
 
-module.exports = { searchProducts, getProducts, getProductByID, productsRecommendations }
+const searchProductsByImage = async (req, res, next) => {
+  // attached by prev middleware (validateImageInput)
+  const {image, isURL} = req.imageData;
+
+
+  // check if the image URL is valid
+  if (isURL) {
+    const response = await fetch(image); //image = URL
+
+    if (!response.ok) 
+      return next(new CustomError('BadRequestError', 'Invalid image URL', 400))
+    
+  }
+  
+  // returns the product name/brand/subcategory (throws error for non-selling product image and NSFW image)
+  const searchValue = await identifyProductAi(image, isURL)
+  
+  // get products
+  const products = await getProductsAgg({
+    filter: {
+      $text: { $search: searchValue, $caseSensitive: false }
+    },
+    limit: 20
+  }, req.nearbyWarehouse, false)
+
+  sendApiResponse(res, 200, {
+    message: products.length === 0 ? "We couldn't find what you are looking for." : undefined,
+    data: products,
+})
+
+}
+
+module.exports = { 
+  searchProducts, 
+  getProducts, 
+  getProductByID, 
+  productsRecommendations, 
+  searchProductsByImage 
+}
+

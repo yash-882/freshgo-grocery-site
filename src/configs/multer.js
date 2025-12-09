@@ -2,7 +2,7 @@ const multer = require('multer')
 const CustomError = require('../error-handling/customError.js')
 
 function uploader({
-    allowedFileFormats = [],
+    allowedFileFormats = ['jpeg', 'jpg', 'png'],
     fileSize = 1024 * 1024 * 1, // 1MB default
     fileType
 }) {

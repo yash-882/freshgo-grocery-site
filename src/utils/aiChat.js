@@ -13,6 +13,9 @@ const generateAiResponse = async (prompt) => {
         
     })
 
+    console.log('search value:', response.choices[0].message?.content?.trim());
+    
+
     return response.choices[0].message?.content?.trim();
 }
 

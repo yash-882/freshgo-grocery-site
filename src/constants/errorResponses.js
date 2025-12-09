@@ -52,10 +52,16 @@ const prodErrorHandlers = {
         switch (err.code){
             case 'LIMIT_UNEXPECTED_FILE':
                 return 'File field name is invalid!'
+
             case 'LIMIT_FILE_SIZE':
-                return 'File size is too large. Maximum 1MB per file is allowed!'
+                return 'File size is too large.'
+
             case 'LIMIT_FILE_COUNT':
                 return 'Too many files uploaded!'
+
+            case 'MISSING_FIELD_NAME':
+                return 'File field name is missing!'
+            
             default:
                 return 'Something went wrong with file upload!'
         }

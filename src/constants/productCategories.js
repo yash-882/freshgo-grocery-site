@@ -19,7 +19,7 @@ module.exports = [
     },
     {
         name: 'dairy_and_breads',
-        subcategories: ['milk', 'butter', 'paneer', 'cream', 'desi_ghee', 'white_bread', 'brown_bread', 'multigrain_bread'],
+        subcategories: ['milk', 'butter', 'cheese', 'paneer', 'cream', 'desi_ ghee', 'white_bread', 'brown_bread', 'multigrain_bread'],
     },
     {
         name: 'beverages',
